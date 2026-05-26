@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:salon_app_view/features/appointment/conformation_acreen.dart';
+import 'package:salon_app_view/features/appointment/confirmation_screen.dart';
 
 
 const kPurpleDark = Color(0xFF1A0A3B);

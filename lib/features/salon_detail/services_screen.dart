@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:salon_app_view/features/salon_detail/reviews_screen.dart';
 
 // ─── Colors ───────────────────────────────────────────────
 const kPurpleDark = Color(0xFF2D1B6B);
@@ -334,6 +335,9 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
 
   // ── Bottom CTA ────────────────────────────────────────────
   Widget _buildBottomCTA(BuildContext context) {
+    final salonName = widget.salon?.name ?? 'Prince Hair Salon';
+    final salonLocation = widget.salon?.location ?? 'Near Town Hall';
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         16,
@@ -375,7 +379,27 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      final selectedItems = _services
+                          .where((s) => s.added)
+                          .map((s) => OrderedService(
+                                name: s.name,
+                                originalPrice: s.originalPrice,
+                                discountedPrice: s.discountedPrice,
+                              ))
+                          .toList();
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ReviewOrderScreen(
+                            services: selectedItems,
+                            salonName: salonName,
+                            salonLocation: salonLocation,
+                          ),
+                        ),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kPurpleAccent,
                       foregroundColor: kWhite,

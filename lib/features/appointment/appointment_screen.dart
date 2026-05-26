@@ -97,17 +97,18 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: GestureDetector(
-                      onTap: () => Navigator.maybePop(context),
-                      child: const Icon(
-                        Icons.arrow_back_rounded,
-                        color: kWhite,
-                        size: 24,
+                  if (Navigator.canPop(context))
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: GestureDetector(
+                        onTap: () => Navigator.maybePop(context),
+                        child: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: kWhite,
+                          size: 24,
+                        ),
                       ),
                     ),
-                  ),
                   const Text(
                     'My Appointments',
                     style: TextStyle(

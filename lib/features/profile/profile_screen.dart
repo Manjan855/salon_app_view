@@ -26,6 +26,13 @@ class ProfileScreen extends StatelessWidget {
               color: kPurpleMid,
               child: Row(
                 children: [
+                  if (Navigator.canPop(context)) ...[
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: const Icon(Icons.arrow_back_rounded, color: kWhite),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
                   Container(
                     width: 36,
                     height: 36,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:salon_app_view/core/router/route_name.dart';
 
 class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key});
@@ -201,6 +202,11 @@ class _LocationScreenState extends State<LocationScreen> {
                                   });
                                   Navigator.pop(context);
                                   _showSelectedCitySnackBar(city);
+                                  Future.delayed(const Duration(milliseconds: 600), () {
+                                    if (mounted) {
+                                      Navigator.pushReplacementNamed(context, RouteName.home);
+                                    }
+                                  });
                                 },
                               );
                             },
@@ -335,12 +341,16 @@ class _LocationScreenState extends State<LocationScreen> {
                           elevation: 2,
                         ),
                         onPressed: () {
-                          // Request location permission
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Requesting location access...'),
+                              content: Text('Location services enabled!'),
                             ),
                           );
+                          Future.delayed(const Duration(milliseconds: 600), () {
+                            if (mounted) {
+                              Navigator.pushReplacementNamed(context, RouteName.home);
+                            }
+                          });
                         },
                         child: const Text(
                           "Turn on your Location Services",

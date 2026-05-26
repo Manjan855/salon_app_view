@@ -1,206 +1,265 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_svg/svg.dart';
-// import 'package:salon_app_view/features/onboarding/screens/onboarding_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:provider/provider.dart';
+import 'package:salon_app_view/core/router/route_name.dart';
+import 'package:salon_app_view/shared/providers/auth_provider.dart';
+import 'package:salon_app_view/shared/widgets/custom_button.dart';
+import 'package:salon_app_view/shared/widgets/custom_text_field.dart' as shared;
+import 'package:salon_app_view/features/auth/screens/register_screen.dart';
 
-// class LoginScreen extends StatefulWidget {
-//   const LoginScreen({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
-//   @override
-//   State<LoginScreen> createState() => _LoginScreenState();
-// }
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
 
-// class _LoginScreenState extends State<LoginScreen> {
-//   final _formKey = GlobalKey<FormState>();
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _emailcontroller = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
-//   final TextEditingController _emailcontroller = TextEditingController();
-//   // final TextEditingController _phoneController = TextEditingController();
-//   final TextEditingController _passwordController = TextEditingController();
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.deepPurple,
-//       body: SafeArea(
-//         child: SingleChildScrollView(
-//           child: Padding(
-//             padding: EdgeInsetsGeometry.symmetric(),
-//             child: Column(
-//               crossAxisAlignment: CrossAxisAlignment.center,
-//               children: [
-//                 Row(
-//                   mainAxisAlignment: MainAxisAlignment.center,
-//                   children: [
-//                     Image.asset("assets/hair2.png", width: 60),
-//                     SizedBox(width: 4),
-//                     SvgPicture.asset("assets/hair.svg", width: 60),
-//                   ],
-//                 ),
-//                 SizedBox(height: 24),
-//                 Stack(
-//                   children: [
-//                     Image.asset(
-//                       "assets/first1.png",
-//                       width: double.infinity,
+  @override
+  void dispose() {
+    _emailcontroller.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
-//                       fit: BoxFit.cover,
-//                     ),
+  void _login() async {
+    if (_formKey.currentState!.validate()) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final success = await authProvider.login(
+        email: _emailcontroller.text.trim(),
+        password: _passwordController.text,
+      );
+      if (!mounted) return;
+      if (success) {
+        // Retrieve and save the user to route successfully
+        Navigator.pushReplacementNamed(context, RouteName.home);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authProvider.error ?? 'Login failed. Please check credentials.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
 
-//                     Positioned(
-//                       top: 570,
-//                       left: 10,
-//                       child: Align(
-//                         alignment: Alignment.center,
-//                         child: Container(
-//                           height: 340,
-//                           width: 600,
-//                           decoration: BoxDecoration(
-//                             color: Colors.black87,
-//                             borderRadius: BorderRadius.circular(14),
-//                           ),
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final screenHeight = mediaQuery.size.height;
+    final authProvider = Provider.of<AuthProvider>(context);
 
-//                           child: Column(
-//                             children: [
-//                               const Text(
-//                                 "HII",
-//                                 style: TextStyle(
-//                                   fontSize: 20,
-//                                   fontWeight: FontWeight.bold,
-//                                   color: Colors.white,
-//                                 ),
-//                               ),
+    return Scaffold(
+      backgroundColor: Colors.deepPurple,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 20),
+                  // Logo row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset("assets/hair2.png", width: 50, height: 50),
+                      const SizedBox(width: 8),
+                      SvgPicture.asset("assets/hair.svg", width: 50),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
 
-//                               const SizedBox(height: 10),
-//                               Form(
-//                                 key: _formKey,
-//                                 child: CustomTextField(
-//                                   controller: _emailcontroller,
-//                                   labelText: "Email",
-//                                   obscureText: false,
-//                                   validator: (value) {
-//                                     if (value == null || value.isEmpty) {
-//                                       return "Enter email";
-//                                     }
+                  // Background illustration card
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      "assets/first1.png",
+                      height: screenHeight * 0.22,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
 
-//                                     if (!value.contains("@")) {
-//                                       return "Enter valid email";
-//                                     }
+                  // Login Form Card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white12,
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 15,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Center(
+                          child: Text(
+                            "WELCOME BACK",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
 
-//                                     return null;
-//                                   },
-//                                 ),
-//                               ),
-//                               const SizedBox(height: 10),
-//                               CustomTextField(
-//                                 controller: _passwordController,
-//                                 labelText: "Password",
-//                                 obscureText: true,
-//                                 validator: (value) {
-//                                   if (value == null || value.isEmpty) {
-//                                     return "Enter Password";
-//                                   }
-//                                   return null;
-//                                 },
-//                               ),
+                        // Email Field
+                        shared.CustomTextField(
+                          controller: _emailcontroller,
+                          label: "Email",
+                          hint: "Enter your email",
+                          prefixIcon: Icons.email_outlined,
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return "Enter email";
+                            }
+                            if (!value.contains("@")) {
+                              return "Enter valid email";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
 
-//                               const SizedBox(height: 10),
-//                               ElevatedButton.icon(
-                                
-//                                 style: ElevatedButton.styleFrom(
-//                                   backgroundColor: Colors.white,
-//                                   foregroundColor: Colors.purpleAccent,
-//                                   elevation: 8,
-//                                   shape: RoundedRectangleBorder(
-//                                     borderRadius: BorderRadius.circular(15),
-//                                   ),
-//                                 ),
+                        // Password Field
+                        shared.CustomTextField(
+                          controller: _passwordController,
+                          label: "Password",
+                          hint: "Enter your password",
+                          prefixIcon: Icons.lock_outline_rounded,
+                          obscureText: _obscurePassword,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              color: Colors.white70,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return "Enter Password";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
 
-//                                 onPressed: () {},
+                        // Login / Sign Up CTA
+                        authProvider.isLoading
+                            ? const Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFFC56AFF),
+                                ),
+                              )
+                            : CustomButton(
+                                text: "Login",
+                                onPressed: _login,
+                                height: 50,
+                              ),
+                        const SizedBox(height: 16),
 
-//                                 icon: Image.asset(
-//                                   "assets/google2.png",
-//                                   height: 24,
-//                                   width: 24,
-//                                 ),
+                        // Google Sign In
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.purple,
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () {
+                              // Perform Google sign in mock
+                              _emailcontroller.text = "customer@example.com";
+                              _passwordController.text = "password123";
+                              _login();
+                            },
+                            icon: Image.asset(
+                              "assets/google2.png",
+                              height: 22,
+                              width: 22,
+                            ),
+                            label: const Text(
+                              "Continue with Google",
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
 
-//                                 label: const Text(
-//                                   "Continue with Google",
-//                                   style: TextStyle(
-//                                     fontSize: 20,
-//                                     fontWeight: FontWeight.w600,
-//                                   ),
-//                                 ),
-//                               ),
-//                               Row(
-//                                 mainAxisAlignment: MainAxisAlignment.center,
-//                                 children: [
-//                                  const Text(
-//                                     "Already a member?",
-//                                     style: TextStyle(color: Colors.white),
-//                                   ),
-//                                   RichText(
-//                                     text:const TextSpan(
-//                                       text: 'Login',
-//                                       style: TextStyle(color: Colors.purple),
-//                                     ),
-//                                   ),
-//                                 ],
-//                               ),
-//                               const SizedBox(height: 20),
-//                               MyButton(
-//                                 name: "Sign Up",
-//                                 onTap: () {},
-//                                 height: 45,
-//                                 width: 170,
-//                               ),
-                              
-//                             ],
-//                           ),
-//                         ),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-// class CustomTextField extends StatelessWidget {
-//   const CustomTextField({
-//     super.key,
-//     required this.labelText,
-//     required this.controller,
-//     required this.validator,
-//     required this.obscureText, required IconData prefixIcon, required String label, required int maxLines, required String hint,
-//   });
-
-//   final TextEditingController? controller;
-//   final String labelText;
-//   final String? Function(String?) validator;
-//   final bool obscureText;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(horizontal: 14),
-//       child: TextFormField(
-//         obscureText: obscureText,
-//         controller: controller,
-//         keyboardType: TextInputType.text,
-
-//         style:const TextStyle(color: Colors.white),
-//         decoration: InputDecoration(
-//           labelText: labelText,
-//           border:const OutlineInputBorder(),
-//           enabledBorder:cons OutlineInputBorder(
-//             borderSide: BorderSide(color: Colors.white),
-//           ),
-//         ),
-//         validator: validator,
-//       ),
-//     );
-//   }
-// }
+                        // Member Redirect
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              "Don't have an account? ",
+                              style: TextStyle(color: Colors.white70, fontSize: 13),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const RegisterScreen(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                "Sign Up",
+                                style: TextStyle(
+                                  color: Color(0xFFC56AFF),
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

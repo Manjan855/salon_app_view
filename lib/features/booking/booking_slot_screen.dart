@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:salon_app_view/features/explore/payment_screen.dart';
 
 // ─── Colors ───────────────────────────────────────────────
 const kPurpleDark = Color(0xFF2D1B6B);
@@ -469,7 +470,16 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.pop(context);
-                      _showBookingSuccess(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PaymentOptionsScreen(
+                            salonName: widget.salonName,
+                            salonLocation: 'Near Town Hall',
+                            totalAmount: 150.0,
+                          ),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kPurpleAccent,

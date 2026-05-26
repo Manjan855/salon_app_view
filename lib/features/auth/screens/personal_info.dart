@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:salon_app_view/core/router/route_name.dart';
 
 class PersonalInfo extends StatefulWidget {
   const PersonalInfo({super.key});
@@ -56,7 +57,9 @@ class _PersonalInfoState extends State<PersonalInfo> {
                       height: 50,
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pushReplacementNamed(context, RouteName.location);
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.deepPurple,
                           foregroundColor: Colors.white,

@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:salon_app_view/features/salon_detail/salon_info.dart';
+import 'package:salon_app_view/features/salon_detail/services_screen.dart';
+import 'package:salon_app_view/features/appointment/appointment_screen.dart';
+import 'package:salon_app_view/features/profile/profile_screen.dart';
+import 'package:salon_app_view/core/router/route_name.dart';
 
 const kPurpleDark = Color(0xFF2D1B6B);
 const kPurpleMid = Color(0xFF3D2080);
@@ -16,6 +21,7 @@ class SalonHomeScreen extends StatefulWidget {
 
 class _SalonHomeScreenState extends State<SalonHomeScreen> {
   int _bottomIndex = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   
   final List<Map<String, String>> _nearbySalons = [
@@ -92,46 +98,66 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: kPurpleDark,
-      drawer: const _AppDrawer(),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildTopBar(),
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 20),
-                    _buildSectionTitle('  📍 Salons near you'),
-                    const SizedBox(height: 12),
-                    _buildNearbySalons(),
-                    const SizedBox(height: 28),
-                    _buildTagline(),
-                    const SizedBox(height: 20),
-                    _buildOffersRow(),
-                    const SizedBox(height: 28),
-                    _buildSectionTitle('  Services for Men'),
-                    const SizedBox(height: 12),
-                    _buildMenServices(),
-                    const SizedBox(height: 28),
-                    _buildSectionTitle('  Services for Women'),
-                    const SizedBox(height: 12),
-                    _buildMenServices(), // reuse with different data in real app
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+      drawer: _AppDrawer(
+        onTabSelected: (index) {
+          setState(() {
+            _bottomIndex = index;
+          });
+        },
       ),
-
-      // ── Bottom Nav Bar ──────────────────────────────────
+      body: _buildBodyContent(),
       bottomNavigationBar: _buildBottomNav(),
     );
+  }
+
+  Widget _buildBodyContent() {
+    switch (_bottomIndex) {
+      case 0:
+        return SafeArea(
+          child: Column(
+            children: [
+              _buildTopBar(),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+                      _buildSectionTitle('  📍 Salons near you'),
+                      const SizedBox(height: 12),
+                      _buildNearbySalons(),
+                      const SizedBox(height: 28),
+                      _buildTagline(),
+                      const SizedBox(height: 20),
+                      _buildOffersRow(),
+                      const SizedBox(height: 28),
+                      _buildSectionTitle('  Services for Men'),
+                      const SizedBox(height: 12),
+                      _buildMenServices(),
+                      const SizedBox(height: 28),
+                      _buildSectionTitle('  Services for Women'),
+                      const SizedBox(height: 12),
+                      _buildMenServices(), // reuse with different data in real app
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      case 1:
+        return const SalonInfoScreen();
+      case 2:
+        return const MyAppointmentsScreen();
+      case 3:
+        return const ProfileScreen();
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   // ── Top App Bar ─────────────────────────────────────────
@@ -143,7 +169,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
         children: [
           // Hamburger
           GestureDetector(
-            onTap: () {},
+            onTap: () => _scaffoldKey.currentState?.openDrawer(),
             child: const Icon(Icons.menu_rounded, color: kWhite, size: 26),
           ),
           const Spacer(),
@@ -171,22 +197,25 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
           ),
           const Spacer(),
           // Notification bell with badge
-          Stack(
-            children: [
-              const Icon(Icons.notifications_outlined, color: kWhite, size: 26),
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.redAccent,
-                    shape: BoxShape.circle,
+          GestureDetector(
+            onTap: () => Navigator.pushNamed(context, RouteName.notifications),
+            child: Stack(
+              children: [
+                const Icon(Icons.notifications_outlined, color: kWhite, size: 26),
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -218,7 +247,24 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
         itemBuilder: (ctx, i) {
           final salon = _nearbySalons[i];
           return GestureDetector(
-            onTap: () {},
+            onTap: () {
+              final selectedSalon = SalonModel(
+                name: salon['name']!,
+                location: salon['location']!,
+                image: salon['image']!,
+                rating: 4.8,
+                ratingCount: 154,
+                offerText: 'Offers on haircuts',
+                price: '₹150 for Men',
+                discount: '30% off',
+              );
+              Navigator.push(
+                ctx,
+                MaterialPageRoute(
+                  builder: (_) => SalonServicesScreen(salon: selectedSalon),
+                ),
+              );
+            },
             child: ClipRRect(
               borderRadius: BorderRadius.circular(14),
               child: SizedBox(
@@ -493,7 +539,8 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
 }
 
 class _AppDrawer extends StatelessWidget {
-  const _AppDrawer();
+  const _AppDrawer({required this.onTabSelected});
+  final ValueChanged<int> onTabSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -558,17 +605,26 @@ class _AppDrawer extends StatelessWidget {
                   _DrawerItem(
                     icon: Icons.home_outlined,
                     label: 'Home',
-                    onTap: () => Navigator.pop(context),
+                    onTap: () {
+                      Navigator.pop(context);
+                      onTabSelected(0);
+                    },
                   ),
                   _DrawerItem(
                     icon: Icons.calendar_today_outlined,
                     label: 'My Appointments',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.pop(context);
+                      onTabSelected(2);
+                    },
                   ),
                   _DrawerItem(
                     icon: Icons.favorite_border_rounded,
                     label: 'Favourites',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, RouteName.wishlist);
+                    },
                   ),
                   _DrawerItem(
                     icon: Icons.local_offer_outlined,
@@ -579,7 +635,10 @@ class _AppDrawer extends StatelessWidget {
                   _DrawerItem(
                     icon: Icons.person_outline_rounded,
                     label: 'Profile',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.pop(context);
+                      onTabSelected(3);
+                    },
                   ),
                   _DrawerItem(
                     icon: Icons.settings_outlined,

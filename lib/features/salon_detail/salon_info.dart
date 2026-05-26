@@ -140,14 +140,17 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          GestureDetector(
-            onTap: () => Navigator.maybePop(context),
-            child: const Icon(
-              Icons.arrow_back_rounded,
-              color: kWhite,
-              size: 24,
-            ),
-          ),
+          if (Navigator.canPop(context))
+            GestureDetector(
+              onTap: () => Navigator.maybePop(context),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: kWhite,
+                size: 24,
+              ),
+            )
+          else
+            const SizedBox(width: 24),
           const Spacer(),
           GestureDetector(
             onTap: () {},

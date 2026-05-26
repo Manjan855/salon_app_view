@@ -1,7 +1,10 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:salon_app_view/features/auth/screens/login_screen.dart';
+import 'package:salon_app_view/shared/widgets/custom_button.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -11,131 +14,119 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.white12,
+        statusBarIconBrightness: Brightness.light,
+      ),
+    );
+  }
+
+  Future<void> _setSeenOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('seenOnboarding', true);
+  }
+
+  void _getStarted() async {
+    await _setSeenOnboarding();
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final screenHeight = mediaQuery.size.height;
+
     return Scaffold(
       backgroundColor: Colors.deepPurple,
-
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                const SizedBox(height: 20),
+                // Logos
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset("assets/hair2.png", width: 60, height: 60),
-                    SizedBox(width: 4),
-                    SvgPicture.asset("assets/hair.svg", width: 60),
+                    Image.asset("assets/hair2.png", width: 50, height: 50),
+                    const SizedBox(width: 4),
+                    SvgPicture.asset("assets/hair.svg", width: 50),
                   ],
                 ),
+                SizedBox(height: screenHeight * 0.08),
 
-                SizedBox(height: 150),
-                Transform.translate(
-                  offset: Offset(15, -10),
-                  child: Transform.rotate(
-                    angle: -5 * pi / 180,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: Image.asset(
-                        "assets/first.png",
-                        // height: 314,
-                        // width: 408,
+                // Constrained Illustration
+                SizedBox(
+                  height: screenHeight * 0.35,
+                  child: Transform.translate(
+                    offset: const Offset(0, -10),
+                    child: Transform.rotate(
+                      angle: -5 * pi / 180,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(30),
+                        child: Image.asset(
+                          "assets/first.png",
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
                   ),
                 ),
-                SizedBox(height: 28),
+                SizedBox(height: screenHeight * 0.05),
+
+                // Indicator dots
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      height: 10,
-                      width: 30,
+                      height: 8,
+                      width: 24,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Container(
-                      height: 10,
-                      width: 10,
+                      height: 8,
+                      width: 8,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.white.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Container(
-                      height: 10,
-                      width: 10,
+                      height: 8,
+                      width: 8,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.white.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 80),
-                MyButton(
-                  name: 'Get Started',
-                  onTap: () {},
+                SizedBox(height: screenHeight * 0.08),
+
+                // Get Started Button
+                CustomButton(
+                  text: 'Get Started',
+                  onPressed: _getStarted,
                   height: 55,
-                  width: double.infinity,
+                  bgColor: const Color(0xFFC56AFF),
                 ),
+                const SizedBox(height: 20),
               ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class MyButton extends StatelessWidget {
-  const MyButton({
-    super.key,
-    required this.name,
-    required this.onTap,
-    this.bgColor = const Color(0xFFC56AFF),
-    this.textColor = Colors.white,
-    required this.height,
-    required this.width,
-  });
-
-  final String name;
-  final VoidCallback onTap;
-  final Color bgColor;
-  final Color textColor;
-  final double height;
-  final double width;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      width: width,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: ElevatedButton(
-          onPressed: onTap,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: bgColor,
-            foregroundColor: textColor,
-            elevation: 8,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          child: Text(
-            name,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
             ),
           ),
         ),

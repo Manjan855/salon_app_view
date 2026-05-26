@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:salon_app_view/core/router/route_name.dart';
+import 'package:salon_app_view/features/appointment/appointment_screen.dart';
 
 const kPurpleDark = Color(0xFF1A0A3B);
 const kPurpleMid = Color(0xFF3D2080);
@@ -182,10 +184,14 @@ class ConfirmationScreen extends StatelessWidget {
                     width: double.infinity,
                     child: OutlinedButton(
                       onPressed: () {
-                        // Navigate to My Appointments
-                        Navigator.of(
+                        // Navigate directly to My Appointments on top of Home Screen
+                        Navigator.pushAndRemoveUntil(
                           context,
-                        ).popUntil((route) => route.isFirst);
+                          MaterialPageRoute(
+                            builder: (_) => const MyAppointmentsScreen(),
+                          ),
+                          (route) => route.isFirst,
+                        );
                       },
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: kPurpleLight.withOpacity(0.4)),

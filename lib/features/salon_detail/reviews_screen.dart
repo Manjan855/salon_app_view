@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:salon_app_view/features/salon_detail/salots_screen.dart';
+import 'package:salon_app_view/features/salon_detail/slots_screen.dart';
 
 // ─── Colors ───────────────────────────────────────────────
 const kPurpleDark = Color(0xFF2D1B6B);
