@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:salon_app_view/features/salon_detail/services_screen.dart';
+import 'package:salon_app_view/core/theme/app_theme.dart';
 
-// ─── Colors ───────────────────────────────────────────────
-const kPurpleDark = Color(0xFF2D1B6B);
-const kPurpleMid = Color(0xFF3D2080);
-const kPurpleAccent = Color(0xFF7B2FBE);
-const kPurpleLight = Color(0xFF9B6FD4);
-const kWhite = Color(0xFFFFFFFF);
-const kTextMuted = Color(0xFFB8A9D9);
 const kGold = Color(0xFFFFD700);
 const kGreen = Color(0xFF4CAF50);
 
@@ -102,8 +96,12 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
     ),
   ];
 
+  AppThemeColors get colors => AppThemeColors.of(context);
+
   @override
   Widget build(BuildContext context) {
+    final kPurpleDark = colors.purpleDark;
+
     return Scaffold(
       backgroundColor: kPurpleDark,
       body: SafeArea(
@@ -136,6 +134,7 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
   }
 
   Widget _buildTopBar(BuildContext context) {
+    final kWhite = colors.white;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -143,7 +142,7 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
           if (Navigator.canPop(context))
             GestureDetector(
               onTap: () => Navigator.maybePop(context),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_rounded,
                 color: kWhite,
                 size: 24,
@@ -154,7 +153,7 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
           const Spacer(),
           GestureDetector(
             onTap: () {},
-            child: const Icon(Icons.search_rounded, color: kWhite, size: 24),
+            child: Icon(Icons.search_rounded, color: kWhite, size: 24),
           ),
         ],
       ),
@@ -162,60 +161,67 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
   }
 
   Widget _buildFilterBar() {
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: kPurpleMid,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      color: kPurpleMid,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
+          // Filter Button
           Expanded(
             child: GestureDetector(
               onTap: () => _showFilterSheet(),
-              child:const Padding(
+              child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: kPurpleLight.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Text(
-                      'Filter',
+                      'Sort & Filter',
                       style: TextStyle(
                         color: kWhite,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 6),
                     Icon(Icons.filter_list_rounded, color: kWhite, size: 18),
                   ],
                 ),
               ),
             ),
           ),
-          Container(
-            width: 0.5,
-            height: 36,
-            color: kPurpleLight.withOpacity(0.4),
-          ),
+          const SizedBox(width: 12),
+          // Gender Button
           Expanded(
             child: GestureDetector(
               onTap: () => _showGenderSheet(),
-              child: Padding(
+              child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: kPurpleLight.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       _selectedGender == 'All' ? 'Gender' : _selectedGender,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: kWhite,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(width: 6),
-                    const Icon(
+                    Icon(
                       Icons.keyboard_arrow_down_rounded,
                       color: kWhite,
                       size: 18,
@@ -261,6 +267,13 @@ class _SalonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     return Container(
       decoration: BoxDecoration(
         color: kPurpleMid,
@@ -287,7 +300,7 @@ class _SalonCard extends StatelessWidget {
                       width: 88,
                       height: 88,
                       color: kPurpleAccent,
-                      child: const Icon(Icons.store, color: kWhite),
+                      child: const Icon(Icons.store, color: Colors.white),
                     ),
                   ),
                 ),
@@ -299,7 +312,7 @@ class _SalonCard extends StatelessWidget {
                     children: [
                       Text(
                         salon.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: kPurpleLight,
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -308,7 +321,7 @@ class _SalonCard extends StatelessWidget {
                       const SizedBox(height: 3),
                       Text(
                         salon.location,
-                        style: const TextStyle(color: kTextMuted, fontSize: 12),
+                        style: TextStyle(color: kTextMuted, fontSize: 12),
                       ),
                       const SizedBox(height: 6),
                       Row(
@@ -327,11 +340,15 @@ class _SalonCard extends StatelessWidget {
                             );
                           }),
                           const SizedBox(width: 4),
-                          Text(
-                            '${salon.rating} (${salon.ratingCount} ratings)',
-                            style: const TextStyle(
-                              color: kTextMuted,
-                              fontSize: 11,
+                          Expanded(
+                            child: Text(
+                              '${salon.rating} (${salon.ratingCount} ratings)',
+                              style: TextStyle(
+                                color: kTextMuted,
+                                fontSize: 11,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -357,12 +374,12 @@ class _SalonCard extends StatelessWidget {
                     children: [
                       Text(
                         salon.offerText,
-                        style: const TextStyle(color: kTextMuted, fontSize: 11),
+                        style: TextStyle(color: kTextMuted, fontSize: 11),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         salon.price,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: kWhite,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -370,7 +387,7 @@ class _SalonCard extends StatelessWidget {
                       ),
                       Text(
                         salon.discount,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: kGreen,
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
@@ -409,13 +426,13 @@ class _SalonCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     GestureDetector(
                       onTap: () {},
-                      child:const Row(
-                        children: const [
+                      child: Row(
+                        children: [
                           Text(
                             'Add to Favourites',
                             style: TextStyle(color: kTextMuted, fontSize: 10),
                           ),
-                          SizedBox(width: 3),
+                          const SizedBox(width: 3),
                           Icon(
                             Icons.favorite_border_rounded,
                             color: kTextMuted,
@@ -448,10 +465,18 @@ class _FilterSheetState extends State<_FilterSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+    final kPurpleDark = colors.purpleDark;
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: kPurpleMid,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
       child: Column(
@@ -472,7 +497,7 @@ class _FilterSheetState extends State<_FilterSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Filters',
                 style: TextStyle(
                   color: kWhite,
@@ -485,7 +510,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                   _maxPrice = 200;
                   _sortBy = 'Rating';
                 }),
-                child: const Text(
+                child: Text(
                   'Reset',
                   style: TextStyle(color: kPurpleLight),
                 ),
@@ -493,7 +518,7 @@ class _FilterSheetState extends State<_FilterSheet> {
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Sort by',
             style: TextStyle(
               color: kTextMuted,
@@ -539,7 +564,7 @@ class _FilterSheetState extends State<_FilterSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Max Price',
                 style: TextStyle(
                   color: kTextMuted,
@@ -549,7 +574,7 @@ class _FilterSheetState extends State<_FilterSheet> {
               ),
               Text(
                 '₹${_maxPrice.round()}',
-                style: const TextStyle(
+                style: TextStyle(
                   color: kPurpleLight,
                   fontWeight: FontWeight.w600,
                 ),
@@ -578,7 +603,7 @@ class _FilterSheetState extends State<_FilterSheet> {
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: kPurpleAccent,
-                foregroundColor: kWhite,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -605,11 +630,19 @@ class _GenderSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+    final kPurpleDark = colors.purpleDark;
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     final options = ['All', 'Men', 'Women', 'Unisex'];
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: kPurpleMid,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
       child: Column(
@@ -627,7 +660,7 @@ class _GenderSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Select Gender',
             style: TextStyle(
               color: kWhite,
@@ -667,7 +700,7 @@ class _GenderSheet extends StatelessWidget {
                       ),
                     ),
                     if (selected == g)
-                      const Icon(
+                      Icon(
                         Icons.check_circle_rounded,
                         color: kWhite,
                         size: 18,

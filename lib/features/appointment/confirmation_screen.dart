@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:salon_app_view/core/theme/app_theme.dart';
 import 'package:salon_app_view/core/router/route_name.dart';
 import 'package:salon_app_view/features/appointment/appointment_screen.dart';
-
-const kPurpleDark = Color(0xFF1A0A3B);
-const kPurpleMid = Color(0xFF3D2080);
-const kPurpleAccent = Color(0xFF7B2FBE);
-const kPurpleLight = Color(0xFF9B6FD4);
-const kWhite = Color(0xFFFFFFFF);
-const kTextMuted = Color(0xFFB8A9D9);
 
 class ConfirmationScreen extends StatelessWidget {
   final String salonName;
@@ -21,6 +15,14 @@ class ConfirmationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+    final kPurpleDark = colors.purpleDark;
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     return Scaffold(
       backgroundColor: kPurpleDark,
       body: SafeArea(
@@ -36,14 +38,14 @@ class ConfirmationScreen extends StatelessWidget {
                     alignment: Alignment.centerLeft,
                     child: GestureDetector(
                       onTap: () => Navigator.maybePop(context),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_rounded,
                         color: kWhite,
                         size: 24,
                       ),
                     ),
                   ),
-                  const Text(
+                  Text(
                     'Success',
                     style: TextStyle(
                       color: kWhite,
@@ -64,7 +66,7 @@ class ConfirmationScreen extends StatelessWidget {
                 children: [
                   Text(
                     salonName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: kPurpleLight,
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
@@ -74,7 +76,7 @@ class ConfirmationScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.location_on_rounded,
                         color: kPurpleLight,
                         size: 13,
@@ -82,7 +84,7 @@ class ConfirmationScreen extends StatelessWidget {
                       const SizedBox(width: 3),
                       Text(
                         salonLocation,
-                        style: const TextStyle(color: kTextMuted, fontSize: 12),
+                        style: TextStyle(color: kTextMuted, fontSize: 12),
                       ),
                     ],
                   ),
@@ -110,7 +112,7 @@ class ConfirmationScreen extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(color: kPurpleAccent, width: 2),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.check_rounded,
                         color: kPurpleLight,
                         size: 48,
@@ -118,7 +120,7 @@ class ConfirmationScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 28),
-                  const Text(
+                  Text(
                     'Congrats your seat\nhas booked!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -130,7 +132,7 @@ class ConfirmationScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'Your appointment has been confirmed.\nSee you soon!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
@@ -200,7 +202,7 @@ class ConfirmationScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'View Appointment',
                         style: TextStyle(
                           color: kTextMuted,

@@ -1,14 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:salon_app_view/core/theme/app_theme.dart';
 import 'package:salon_app_view/features/explore/payment_screen.dart';
-
-// ─── Colors ───────────────────────────────────────────────
-const kPurpleDark = Color(0xFF2D1B6B);
-const kPurpleMid = Color(0xFF3D2080);
-const kPurpleAccent = Color(0xFF7B2FBE);
-const kPurpleLight = Color(0xFF9B6FD4);
-const kWhite = Color(0xFFFFFFFF);
-const kTextMuted = Color(0xFFB8A9D9);
-const kDisabled = Color(0xFF4A4A6A);
 
 // ─── Barber Model ─────────────────────────────────────────
 class BarberModel {
@@ -35,6 +27,8 @@ class BookingSlotsScreen extends StatefulWidget {
 }
 
 class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
+  AppThemeColors get colors => AppThemeColors.of(context);
+
   // Which barber card is expanded
   int? _expandedBarber;
 
@@ -62,6 +56,11 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final kPurpleDark = colors.purpleDark;
+    final kPurpleLight = colors.purpleLight;
+    final kTextMuted = colors.textMuted;
+    final kWhite = colors.white;
+
     return Scaffold(
       backgroundColor: kPurpleDark,
       body: SafeArea(
@@ -81,7 +80,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                     Center(
                       child: Text(
                         widget.salonName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: kPurpleLight,
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
@@ -94,7 +93,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                       child: Text(
                         'Availability of Barbers as per your\nselected services',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: kTextMuted,
                           fontSize: 12,
                           height: 1.5,
@@ -106,7 +105,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                     // ── Selected slot chip ────────────────
                     Row(
                       children: [
-                        const Text(
+                        Text(
                           'Slot : ',
                           style: TextStyle(
                             color: kWhite,
@@ -116,7 +115,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                         ),
                         Text(
                           widget.selectedSlot,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: kPurpleLight,
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -126,7 +125,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                     ),
                     const SizedBox(height: 10),
 
-                    const Text(
+                    Text(
                       'Barbers/Stylists',
                       style: TextStyle(
                         color: kPurpleLight,
@@ -155,13 +154,14 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
 
   // ── App Bar ───────────────────────────────────────────────
   Widget _buildAppBar(BuildContext context) {
+    final kWhite = colors.white;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.maybePop(context),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_rounded,
               color: kWhite,
               size: 24,
@@ -176,6 +176,14 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
   Widget _buildBarberCard(int index, BarberModel barber) {
     final isSelected = _confirmedBarberIndex == index;
     final isExpanded = _expandedBarber == index;
+
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kDisabled = colors.disabled;
+    final kPurpleDark = colors.purpleDark;
+    final kTextMuted = colors.textMuted;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -307,6 +315,12 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
 
   // ── Confirm Button ────────────────────────────────────────
   Widget _buildConfirmButton(BuildContext context) {
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleLight = colors.purpleLight;
+    final kTextMuted = colors.textMuted;
+    final kPurpleAccent = colors.purpleAccent;
+    final kWhite = colors.white;
+
     return Container(
       padding: EdgeInsets.fromLTRB(
         16,
@@ -332,11 +346,11 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                 children: [
                   Text(
                     _barbers[_confirmedBarberIndex!].name,
-                    style: const TextStyle(color: kTextMuted, fontSize: 12),
+                    style: TextStyle(color: kTextMuted, fontSize: 12),
                   ),
                   Text(
                     _confirmedSlot!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: kPurpleLight,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -376,13 +390,19 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
 
   // ── Confirmation Bottom Sheet ─────────────────────────────
   void _showConfirmationSheet(BuildContext context) {
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleLight = colors.purpleLight;
+    final kPurpleAccent = colors.purpleAccent;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: kPurpleMid,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: EdgeInsets.fromLTRB(
           20,
@@ -413,7 +433,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                 shape: BoxShape.circle,
                 border: Border.all(color: kPurpleAccent, width: 1.5),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.check_rounded,
                 color: kPurpleLight,
                 size: 30,
@@ -421,7 +441,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
             ),
             const SizedBox(height: 14),
 
-            const Text(
+            Text(
               'Confirm Booking?',
               style: TextStyle(
                 color: kWhite,
@@ -455,7 +475,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Edit',
                       style: TextStyle(
                         color: kTextMuted,
@@ -506,6 +526,11 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
 
   // ── Booking Success Dialog ────────────────────────────────
   void _showBookingSuccess(BuildContext context) {
+    final kPurpleMid = colors.purpleMid;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+    final kPurpleAccent = colors.purpleAccent;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -520,8 +545,8 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
               Container(
                 width: 70,
                 height: 70,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A3A1A),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1A3A1A),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -531,7 +556,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Booking Confirmed!',
                 style: TextStyle(
                   color: kWhite,
@@ -543,7 +568,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
               Text(
                 '${widget.salonName}\n${_barbers[_confirmedBarberIndex!].name} · ${widget.selectedSlot}',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   color: kTextMuted,
                   fontSize: 13,
                   height: 1.5,
@@ -589,15 +614,19 @@ class _SheetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+    final kTextMuted = colors.textMuted;
+    final kWhite = colors.white;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: kTextMuted, fontSize: 13)),
+          Text(label, style: TextStyle(color: kTextMuted, fontSize: 13)),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               color: kWhite,
               fontSize: 13,
               fontWeight: FontWeight.w600,

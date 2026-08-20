@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:salon_app_view/core/theme/app_theme.dart';
 import 'package:salon_app_view/features/booking/booking_slot_screen.dart';
-
-// ─── Colors ───────────────────────────────────────────────
-const kPurpleDark = Color(0xFF2D1B6B);
-const kPurpleMid = Color(0xFF3D2080);
-const kPurpleAccent = Color(0xFF7B2FBE);
-const kPurpleLight = Color(0xFF9B6FD4);
-const kWhite = Color(0xFFFFFFFF);
-const kTextMuted = Color(0xFFB8A9D9);
 
 // ─── Time Slot Range Model ────────────────────────────────
 class SlotRange {
@@ -34,6 +27,8 @@ class SlotsAvailabilityScreen extends StatefulWidget {
 }
 
 class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
+  AppThemeColors get colors => AppThemeColors.of(context);
+
   final List<SlotRange> _ranges = [
     SlotRange(
       label: '8 AM to 11 AM',
@@ -57,6 +52,7 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final kPurpleDark = colors.purpleDark;
     return Scaffold(
       backgroundColor: kPurpleDark,
       body: SafeArea(
@@ -89,13 +85,15 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
   }
 
   Widget _buildAppBar(BuildContext context) {
+    final kWhite = colors.white;
+    final kPurpleLight = colors.purpleLight;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.maybePop(context),
-            child: const Icon(
+            child: Icon(
               Icons.arrow_back_rounded,
               color: kWhite,
               size: 24,
@@ -104,7 +102,7 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
           const SizedBox(width: 16),
           Text(
             widget.salonName,
-            style: const TextStyle(
+            style: TextStyle(
               color: kPurpleLight,
               fontSize: 18,
               fontWeight: FontWeight.w800,
@@ -117,6 +115,8 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
   }
 
   Widget _buildSalonImage() {
+    final kPurpleAccent = colors.purpleAccent;
+    final kWhite = colors.white;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ClipRRect(
@@ -129,19 +129,16 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
           errorBuilder: (_, __, ___) => Container(
             height: 250,
             color: kPurpleAccent,
-            child: const Icon(Icons.store, color: kWhite, size: 60),
+            child: Icon(Icons.store, color: kWhite, size: 60),
           ),
-          // errorBuilder: (_, __, ___) => Container(
-          //   height: 250,
-          //   color: kPurpleAccent,
-          //   child: const Icon(Icons.store, color: kWhite, size: 60),
-          // ),
         ),
       ),
     );
   }
 
   Widget _buildBanner() {
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleLight = colors.purpleLight;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Container(
@@ -151,7 +148,7 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: kPurpleAccent.withOpacity(0.5), width: 0.5),
         ),
-        child: const Text(
+        child: Text(
           'Availability of slots for the Day?',
           style: TextStyle(
             color: kPurpleLight,
@@ -163,32 +160,13 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
     );
   }
 
-  // Widget _buildAvailability() {
-  //   return Padding(
-  //     padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-  //     child: Container(
-  //       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-
-  //       decoration: BoxDecoration(
-  //         color: kPurpleAccent.withValues(alpha: 0.3),
-  //         borderRadius: BorderRadius.circular(10),
-  //         border: Border.all(color: kTextMuted, width: 0.5),
-  //       ),
-  //       child: const Center(
-  //         child: Text(
-  //           "Availability of the slot",
-  //           style: TextStyle(
-  //             color: kPurpleLight,
-  //             fontSize: 13,
-  //             fontWeight: FontWeight.w500,
-  //           ),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-
   Widget _buildSlotRange(int index, SlotRange range) {
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleDark = colors.purpleDark;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kPurpleAccent = colors.purpleAccent;
+
     return Column(
       children: [
         // ── Range row (always visible) ──────────────────
@@ -230,21 +208,12 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
                 AnimatedRotation(
                   turns: range.isExpanded ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
-                  child: const Icon(
+                  child: Icon(
                     Icons.arrow_drop_down,
                     color: kPurpleLight,
                     size: 30,
                   ),
                 ),
-                // AnimatedRotation(
-                //   turns: range.isExpanded ? 0.25 : 0,
-                //   duration: const Duration(milliseconds: 200),
-                //   child: const Icon(
-                //     Icons.chevron_right_rounded,
-                //     color: kTextMuted,
-                //     size: 20,
-                //   ),
-                // ),
               ],
             ),
           ),
@@ -255,7 +224,7 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
           firstChild: const SizedBox.shrink(),
           secondChild: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: kPurpleMid,
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(12),

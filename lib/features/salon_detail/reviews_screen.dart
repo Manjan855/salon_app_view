@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:salon_app_view/core/theme/app_theme.dart';
 import 'package:salon_app_view/features/salon_detail/slots_screen.dart';
 
-// ─── Colors ───────────────────────────────────────────────
-const kPurpleDark = Color(0xFF2D1B6B);
-const kPurpleMid = Color(0xFF3D2080);
-const kPurpleAccent = Color(0xFF7B2FBE);
-const kPurpleLight = Color(0xFF9B6FD4);
-const kWhite = Color(0xFFFFFFFF);
-const kTextMuted = Color(0xFFB8A9D9);
 const kGreen = Color(0xFF4CAF50);
 const kRed = Color(0xFFE53935);
 
@@ -46,6 +40,8 @@ class ReviewOrderScreen extends StatefulWidget {
 class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
   late List<OrderedService> _services;
 
+  AppThemeColors get colors => AppThemeColors.of(context);
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +54,7 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final kPurpleDark = colors.purpleDark;
     return Scaffold(
       backgroundColor: kPurpleDark,
       body: SafeArea(
@@ -85,7 +82,7 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
                       itemCount: _services.length,
                       separatorBuilder: (_, __) => Container(
                         height: 0.5,
-                        color: kPurpleLight.withOpacity(0.2),
+                        color: colors.purpleLight.withOpacity(0.2),
                       ),
                       itemBuilder: (ctx, i) => _OrderServiceTile(
                         service: _services[i],
@@ -106,6 +103,7 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
   }
 
   Widget _buildAppBar(BuildContext context) {
+    final kWhite = colors.white;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Stack(
@@ -115,14 +113,14 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
             alignment: Alignment.centerLeft,
             child: GestureDetector(
               onTap: () => Navigator.maybePop(context),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_rounded,
                 color: kWhite,
                 size: 24,
               ),
             ),
           ),
-          const Text(
+          Text(
             'Review Order',
             style: TextStyle(
               color: kWhite,
@@ -136,6 +134,9 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
   }
 
   Widget _buildSalonHeader() {
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleLight = colors.purpleLight;
+    final kTextMuted = colors.textMuted;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
@@ -144,7 +145,7 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
         children: [
           Text(
             widget.salonName,
-            style: const TextStyle(
+            style: TextStyle(
               color: kPurpleLight,
               fontSize: 20,
               fontWeight: FontWeight.w800,
@@ -155,7 +156,7 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.location_on_rounded,
                 color: kPurpleLight,
                 size: 13,
@@ -163,7 +164,7 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
               const SizedBox(width: 3),
               Text(
                 widget.salonLocation,
-                style: const TextStyle(color: kTextMuted, fontSize: 12),
+                style: TextStyle(color: kTextMuted, fontSize: 12),
               ),
             ],
           ),
@@ -173,12 +174,14 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
   }
 
   Widget _buildOrderTitle() {
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
+          Text(
             'Your Order Details',
             style: TextStyle(
               color: kWhite,
@@ -188,7 +191,7 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
           ),
           Text(
             '$_totalMins mins',
-            style: const TextStyle(color: kTextMuted, fontSize: 13),
+            style: TextStyle(color: kTextMuted, fontSize: 13),
           ),
         ],
       ),
@@ -196,6 +199,11 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
   }
 
   Widget _buildBottomBar(BuildContext context) {
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+    final kPurpleAccent = colors.purpleAccent;
     return Container(
       padding: EdgeInsets.fromLTRB(
         16,
@@ -214,9 +222,9 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-            const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
                     'Total amount',
                     style: TextStyle(
@@ -225,7 +233,7 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
                     'Inclusive of all taxes & charges',
                     style: TextStyle(color: kTextMuted, fontSize: 11),
@@ -238,14 +246,14 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
                   children: [
                     Text(
                       '₹${_total.toInt()}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: kWhite,
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(
+                    Icon(
                       Icons.keyboard_arrow_down_rounded,
                       color: kTextMuted,
                       size: 18,
@@ -298,6 +306,10 @@ class _OrderServiceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
@@ -309,15 +321,15 @@ class _OrderServiceTile extends StatelessWidget {
               children: [
                 Text(
                   service.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: kWhite,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 4),
-              const  Row(
-                  children: const [
+                const Row(
+                  children: [
                     Icon(
                       Icons.check_circle_outline_rounded,
                       color: kGreen,
@@ -340,7 +352,7 @@ class _OrderServiceTile extends StatelessWidget {
                 children: [
                   Text(
                     '₹${service.originalPrice.toInt()}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: kTextMuted,
                       fontSize: 12,
                       decoration: TextDecoration.lineThrough,
@@ -350,7 +362,7 @@ class _OrderServiceTile extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     '₹${service.discountedPrice.toInt()}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: kWhite,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,

@@ -33,15 +33,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _register() async {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = await authProvider.signUp(
-        fullName: _nameController.text.trim(),
+
+      // 1. Execute account creation
+      bool registered = await authProvider.signUp(
         email: _emailController.text.trim(),
-        phone: _phoneController.text.trim(),
-        password: _passwordController.text,
+        password: _passwordController.text.trim(),
+        name: _nameController.text.trim(),
       );
+
       if (!mounted) return;
-      if (success) {
-        // Redirection on sign up to get persona details
+
+      if (registered) {
+        // FIXED: Added 'email:' and 'password:' labels to match named parameters
+        await authProvider.login(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+
+        if (!mounted) return;
+
+        // 3. Navigate forward safely with an active local token
         Navigator.pushReplacementNamed(context, RouteName.persona);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -56,8 +67,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final screenHeight = mediaQuery.size.height;
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
@@ -91,13 +100,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: BoxDecoration(
                       color: Colors.black87,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white12,
-                        width: 1,
-                      ),
+                      border: Border.all(color: Colors.white12, width: 1),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withAlpha(77),
                           blurRadius: 15,
                           offset: const Offset(0, 8),
                         ),
@@ -178,7 +184,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           obscureText: _obscurePassword,
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
                               color: Colors.white70,
                             ),
                             onPressed: () {
@@ -219,7 +227,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           children: [
                             const Text(
                               "Already a member? ",
-                              style: TextStyle(color: Colors.white70, fontSize: 13),
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
                             ),
                             GestureDetector(
                               onTap: () {

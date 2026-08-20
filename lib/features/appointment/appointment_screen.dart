@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:salon_app_view/core/theme/app_theme.dart';
 
-const kPurpleDark = Color(0xFF1A0A3B);
-const kPurpleMid = Color(0xFF2D1B6B);
-const kPurpleAccent = Color(0xFF7B2FBE);
-const kPurpleLight = Color(0xFF9B6FD4);
-const kWhite = Color(0xFFFFFFFF);
-const kTextMuted = Color(0xFFB8A9D9);
 const kRed = Color(0xFFE53935);
 
 // ─── Appointment Model ────────────────────────────────────
@@ -39,6 +34,8 @@ class MyAppointmentsScreen extends StatefulWidget {
 class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabCtrl;
+
+  AppThemeColors get colors => AppThemeColors.of(context);
 
   final List<AppointmentModel> _appointments = [
     const AppointmentModel(
@@ -86,6 +83,12 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final kPurpleDark = colors.purpleDark;
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleAccent = colors.purpleAccent;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     return Scaffold(
       backgroundColor: kPurpleDark,
       body: SafeArea(
@@ -102,14 +105,14 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                       alignment: Alignment.centerLeft,
                       child: GestureDetector(
                         onTap: () => Navigator.maybePop(context),
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back_rounded,
                           color: kWhite,
                           size: 24,
                         ),
                       ),
                     ),
-                  const Text(
+                  Text(
                     'My Appointments',
                     style: TextStyle(
                       color: kWhite,
@@ -174,6 +177,12 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
   Widget _buildList(String status) {
     final list = _filtered(status);
 
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleLight = colors.purpleLight;
+    final kTextMuted = colors.textMuted;
+    final kWhite = colors.white;
+    final kPurpleAccent = colors.purpleAccent;
+
     if (list.isEmpty) {
       return Center(
         child: Column(
@@ -187,7 +196,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
             const SizedBox(height: 12),
             Text(
               'No ${status[0].toUpperCase()}${status.substring(1)} appointments',
-              style: const TextStyle(color: kTextMuted, fontSize: 14),
+              style: TextStyle(color: kTextMuted, fontSize: 14),
             ),
           ],
         ),
@@ -223,36 +232,44 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                     children: [
                       Row(
                         children: [
-                          Text(
-                            apt.salonName,
-                            style: const TextStyle(
-                              color: kPurpleLight,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                          Flexible(
+                            child: Text(
+                              apt.salonName,
+                              style: TextStyle(
+                                color: kPurpleLight,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const Text(
+                          Text(
                             ' | ',
                             style: TextStyle(color: kTextMuted, fontSize: 13),
                           ),
-                          Text(
-                            apt.location,
-                            style: const TextStyle(
-                              color: kTextMuted,
-                              fontSize: 12,
+                          Flexible(
+                            child: Text(
+                              apt.location,
+                              style: TextStyle(
+                                color: kTextMuted,
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Date & Time',
                         style: TextStyle(color: kTextMuted, fontSize: 11),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${apt.date} | ${apt.time}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: kWhite,
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -281,7 +298,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Cancel',
                               style: TextStyle(
                                 color: kTextMuted,
@@ -332,7 +349,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                             color: kPurpleLight.withOpacity(0.2),
                             margin: const EdgeInsets.only(bottom: 14),
                           ),
-                          const Text(
+                          Text(
                             'OTP',
                             style: TextStyle(
                               color: kWhite,
@@ -393,13 +410,18 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
   }
 
   void _showCancelDialog(BuildContext context, AppointmentModel apt) {
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: kPurpleMid,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: EdgeInsets.fromLTRB(
           20,
@@ -429,7 +451,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
               child: const Icon(Icons.cancel_outlined, color: kRed, size: 28),
             ),
             const SizedBox(height: 14),
-            const Text(
+            Text(
               'Cancel appointment?',
               style: TextStyle(
                 color: kWhite,
@@ -440,11 +462,11 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
             const SizedBox(height: 6),
             Text(
               '${apt.salonName} · ${apt.date}',
-              style: const TextStyle(color: kTextMuted, fontSize: 12),
+              style: TextStyle(color: kTextMuted, fontSize: 12),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 6),
-            const Text(
+            Text(
               'Cancellations within 24 hours may incur a fee.',
               style: TextStyle(color: kTextMuted, fontSize: 11),
               textAlign: TextAlign.center,
@@ -462,7 +484,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Keep',
                       style: TextStyle(color: kTextMuted),
                     ),
@@ -509,6 +531,11 @@ class _OtpBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+    final kPurpleDark = colors.purpleDark;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+
     return Container(
       width: 56,
       height: 56,
@@ -521,7 +548,7 @@ class _OtpBox extends StatelessWidget {
       child: Center(
         child: Text(
           digit,
-          style: const TextStyle(
+          style: TextStyle(
             color: kWhite,
             fontSize: 22,
             fontWeight: FontWeight.w800,

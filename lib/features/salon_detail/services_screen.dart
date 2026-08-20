@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:salon_app_view/features/salon_detail/reviews_screen.dart';
+import 'package:salon_app_view/core/theme/app_theme.dart';
 
-// ─── Colors ───────────────────────────────────────────────
-const kPurpleDark = Color(0xFF2D1B6B);
-const kPurpleMid = Color(0xFF3D2080);
-const kPurpleAccent = Color(0xFF7B2FBE);
-const kPurpleLight = Color(0xFF9B6FD4);
-const kWhite = Color(0xFFFFFFFF);
-const kTextMuted = Color(0xFFB8A9D9);
 const kGreen = Color(0xFF4CAF50);
 const kGold = Color(0xFFFFD700);
 
@@ -67,6 +61,8 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
     ),
   ];
 
+  AppThemeColors get colors => AppThemeColors.of(context);
+
   String get _totalTime {
     final count = _services.where((s) => s.added).length;
     return '${count * 30} mins';
@@ -80,6 +76,8 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final kPurpleDark = colors.purpleDark;
+
     final salonName = widget.salon?.name ?? 'Prince Hair Salon';
     final salonLocation = widget.salon?.location ?? 'Near Town Hall';
 
@@ -122,6 +120,13 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
 
   // ── Header with image + back ──────────────────────────────
   Widget _buildHeader(BuildContext context, String name, String location) {
+    final kPurpleDark = colors.purpleDark;
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     return Stack(
       children: [
         // Hero image
@@ -139,7 +144,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
             errorBuilder: (_, __, ___) => Container(
               height: 220,
               color: kPurpleAccent,
-              child: const Icon(Icons.store, color: kWhite, size: 60),
+              child: Icon(Icons.store, color: kWhite, size: 60),
             ),
           ),
         ),
@@ -153,10 +158,10 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: kPurpleDark.withOpacity(0.7),
+                color: kPurpleDark.withValues(alpha: 0.7),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.arrow_back_rounded,
                 color: kWhite,
                 size: 20,
@@ -175,7 +180,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
               gradient: LinearGradient(
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
-                colors: [kPurpleDark, kPurpleDark.withOpacity(0.0)],
+                colors: [kPurpleDark, kPurpleDark.withValues(alpha: 0.0)],
               ),
             ),
             child: Row(
@@ -187,7 +192,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                     children: [
                       Text(
                         name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: kWhite,
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
@@ -197,17 +202,21 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.location_on_rounded,
-                            color: kPurpleLight,
+                            color: Colors.white,
                             size: 13,
                           ),
                           const SizedBox(width: 3),
-                          Text(
-                            location,
-                            style: const TextStyle(
-                              color: kTextMuted,
-                              fontSize: 12,
+                          Expanded(
+                            child: Text(
+                              location,
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],
@@ -225,18 +234,18 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                     color: kPurpleMid,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: kPurpleLight.withOpacity(0.3),
+                      color: kPurpleLight.withValues(alpha: 0.3),
                       width: 0.5,
                     ),
                   ),
-                  child:const Row(
-                    children: const [
+                  child: Row(
+                    children: [
                       Icon(
                         Icons.navigation_rounded,
                         color: kPurpleLight,
                         size: 12,
                       ),
-                      SizedBox(width: 3),
+                      const SizedBox(width: 3),
                       Text(
                         '1.5km',
                         style: TextStyle(
@@ -281,19 +290,22 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
 
   // ── Category / Hours row ──────────────────────────────────
   Widget _buildInfoRow() {
-    return const Padding(
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
+    return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text(
                 'Category',
                 style: TextStyle(color: kTextMuted, fontSize: 11),
               ),
-              SizedBox(height: 2),
+              const SizedBox(height: 2),
               Text(
                 'Unisex',
                 style: TextStyle(
@@ -306,12 +318,12 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: const [
+            children: [
               Text(
                 'Mon-Sun',
                 style: TextStyle(color: kTextMuted, fontSize: 11),
               ),
-              SizedBox(height: 2),
+              const SizedBox(height: 2),
               Text(
                 '10:00 am - 10:00 pm',
                 style: TextStyle(
@@ -327,16 +339,26 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
     );
   }
 
-  Widget _buildDivider() => Container(
-    height: 0.5,
-    color: kPurpleLight.withOpacity(0.2),
-    margin: const EdgeInsets.symmetric(horizontal: 16),
-  );
+  Widget _buildDivider() {
+    final kPurpleLight = colors.purpleLight;
+    return Container(
+      height: 0.5,
+      color: kPurpleLight.withOpacity(0.2),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+    );
+  }
 
   // ── Bottom CTA ────────────────────────────────────────────
   Widget _buildBottomCTA(BuildContext context) {
     final salonName = widget.salon?.name ?? 'Prince Hair Salon';
     final salonLocation = widget.salon?.location ?? 'Near Town Hall';
+
+    final kPurpleDark = colors.purpleDark;
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -363,11 +385,11 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                     children: [
                       Text(
                         '${_services.where((s) => s.added).length} service(s) selected',
-                        style: const TextStyle(color: kTextMuted, fontSize: 12),
+                        style: TextStyle(color: kTextMuted, fontSize: 12),
                       ),
                       Text(
                         '₹${_totalPrice.toStringAsFixed(0)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: kWhite,
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -402,7 +424,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kPurpleAccent,
-                      foregroundColor: kWhite,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -431,7 +453,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                           ),
                           child: Text(
                             'Total Time : $_totalTime',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
                               color: kTextMuted,
                             ),
@@ -476,7 +498,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                         color: kPurpleDark.withOpacity(0.4),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Total Time : 30 mins',
                         style: TextStyle(fontSize: 10, color: kTextMuted),
                       ),
@@ -503,6 +525,14 @@ class _ServiceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+    final kPurpleDark = colors.purpleDark;
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     return Column(
       children: [
         Padding(
@@ -517,7 +547,7 @@ class _ServiceTile extends StatelessWidget {
                   children: [
                     Text(
                       item.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: kWhite,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -526,7 +556,7 @@ class _ServiceTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     const Row(
-                      children: const [
+                      children: [
                         Icon(
                           Icons.check_circle_outline_rounded,
                           color: kGreen,
@@ -554,7 +584,7 @@ class _ServiceTile extends StatelessWidget {
                   // Original price (strikethrough)
                   Text(
                     '₹${item.originalPrice.toInt()}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: kTextMuted,
                       fontSize: 12,
                       decoration: TextDecoration.lineThrough,
@@ -564,13 +594,13 @@ class _ServiceTile extends StatelessWidget {
                   // Discounted price
                   Text(
                     '₹${item.discountedPrice.toInt()}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: kWhite,
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const Text(
+                  Text(
                     'inc. of all taxes',
                     style: TextStyle(color: kTextMuted, fontSize: 9),
                   ),

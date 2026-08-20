@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:salon_app_view/core/theme/app_theme.dart';
 import 'package:salon_app_view/features/appointment/confirmation_screen.dart';
-
-
-const kPurpleDark = Color(0xFF1A0A3B);
-const kPurpleMid = Color(0xFF3D2080);
-const kPurpleAccent = Color(0xFF7B2FBE);
-const kPurpleLight = Color(0xFF9B6FD4);
-const kWhite = Color(0xFFFFFFFF);
-const kTextMuted = Color(0xFFB8A9D9);
 
 class PaymentOptionsScreen extends StatefulWidget {
   final String salonName;
@@ -28,8 +21,17 @@ class PaymentOptionsScreen extends StatefulWidget {
 class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
   String? _selectedPayment;
 
+  AppThemeColors get colors => AppThemeColors.of(context);
+
   @override
   Widget build(BuildContext context) {
+    final kPurpleDark = colors.purpleDark;
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     return Scaffold(
       backgroundColor: kPurpleDark,
       body: SafeArea(
@@ -45,14 +47,14 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                     alignment: Alignment.centerLeft,
                     child: GestureDetector(
                       onTap: () => Navigator.maybePop(context),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_rounded,
                         color: kWhite,
                         size: 24,
                       ),
                     ),
                   ),
-                  const Text(
+                  Text(
                     'Payment Options',
                     style: TextStyle(
                       color: kWhite,
@@ -73,7 +75,7 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                 children: [
                   Text(
                     widget.salonName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: kPurpleLight,
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
@@ -83,7 +85,7 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.location_on_rounded,
                         color: kPurpleLight,
                         size: 13,
@@ -91,7 +93,7 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                       const SizedBox(width: 3),
                       Text(
                         widget.salonLocation,
-                        style: const TextStyle(color: kTextMuted, fontSize: 12),
+                        style: TextStyle(color: kTextMuted, fontSize: 12),
                       ),
                     ],
                   ),
@@ -111,10 +113,10 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                       const Column(
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                             Text(
+                            Text(
                               'Total amount',
                               style: TextStyle(
                                 color: kWhite,
@@ -122,8 +124,8 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                          SizedBox(height: 2),
-                           Text(
+                            const SizedBox(height: 2),
+                            Text(
                               'Inclusive of all taxes & charges',
                               style: TextStyle(
                                 color: kPurpleLight,
@@ -134,7 +136,7 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                         ),
                         Text(
                           '₹${widget.totalAmount.toInt()}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: kWhite,
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
@@ -240,6 +242,13 @@ class _PaymentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -270,7 +279,7 @@ class _PaymentTile extends StatelessWidget {
               children: [
                 Text(
                   methodLabel,
-                  style: const TextStyle(color: kTextMuted, fontSize: 13),
+                  style: TextStyle(color: kTextMuted, fontSize: 13),
                 ),
                 ...methodIcons.map(
                   (ic) => Padding(

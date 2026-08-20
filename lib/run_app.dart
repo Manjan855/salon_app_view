@@ -44,6 +44,7 @@ class RunApp extends StatelessWidget {
             routes: {
               RouteName.splash: (context) => const SplashScreen(),
               RouteName.onboard: (context) => const OnboardingScreen(),
+              RouteName.login: (context) => const LoginScreen(),
               RouteName.signUp: (context) => const RegisterScreen(),
               RouteName.persona: (context) => const PersonalInfo(),
               RouteName.location: (context) => const LocationScreen(),

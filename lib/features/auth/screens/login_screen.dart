@@ -6,6 +6,7 @@ import 'package:salon_app_view/shared/providers/auth_provider.dart';
 import 'package:salon_app_view/shared/widgets/custom_button.dart';
 import 'package:salon_app_view/shared/widgets/custom_text_field.dart' as shared;
 import 'package:salon_app_view/features/auth/screens/register_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,32 +17,54 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailcontroller = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _emailcontroller.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _login() async {
+  void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final success = await authProvider.login(
-        email: _emailcontroller.text.trim(),
+
+      // 1. Trigger the login action
+      bool loginSuccess = await authProvider.login(
+        email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+
       if (!mounted) return;
-      if (success) {
-        // Retrieve and save the user to route successfully
-        Navigator.pushReplacementNamed(context, RouteName.home);
+
+      if (loginSuccess) {
+        // 2. Re-fetch profile status from the provider to determine destination
+        final currentUser = Supabase.instance.client.auth.currentUser;
+
+        // Check if this user already filled out their phone number in the profiles table
+        final profile = await Supabase.instance.client
+            .from('profiles')
+            .select()
+            .eq('id', currentUser!.id)
+            .maybeSingle();
+
+        if (!mounted) return;
+
+        if (profile == null || profile['phone'] == null) {
+          // Missing phone info -> send them back to finish setting up
+          Navigator.pushReplacementNamed(context, RouteName.persona);
+        } else {
+          // Everything exists -> Send them straight to the Home Screen!
+          Navigator.pushReplacementNamed(context, RouteName.home);
+        }
       } else {
+        // Show the exact error message coming back from Supabase
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(authProvider.error ?? 'Login failed. Please check credentials.'),
+            content: Text(authProvider.error ?? 'Login Failed.'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -71,10 +94,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Logo row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+
                     children: [
-                      Image.asset("assets/hair2.png", width: 50, height: 50),
-                      const SizedBox(width: 8),
-                      SvgPicture.asset("assets/hair.svg", width: 50),
+                      Image.asset("assets/hair2.png", width: 70, height: 70),
+
+                      SvgPicture.asset(
+                        "assets/hair.svg",
+                        width: 70,
+                        height: 70,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -98,13 +126,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: BoxDecoration(
                       color: Colors.black87,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white12,
-                        width: 1,
-                      ),
+                      border: Border.all(color: Colors.white12, width: 1),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withAlpha(77),
                           blurRadius: 15,
                           offset: const Offset(0, 8),
                         ),
@@ -128,7 +153,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         // Email Field
                         shared.CustomTextField(
-                          controller: _emailcontroller,
+                          controller: _emailController,
                           label: "Email",
                           hint: "Enter your email",
                           prefixIcon: Icons.email_outlined,
@@ -154,7 +179,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           obscureText: _obscurePassword,
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              _obscurePassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
                               color: Colors.white70,
                             ),
                             onPressed: () {
@@ -181,41 +208,56 @@ class _LoginScreenState extends State<LoginScreen> {
                               )
                             : CustomButton(
                                 text: "Login",
-                                onPressed: _login,
+                                onPressed: _handleLogin,
                                 height: 50,
                               ),
                         const SizedBox(height: 16),
 
                         // Google Sign In
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.purple,
-                              elevation: 2,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                       // Locate the ElevatedButton.icon block inside your LoginScreen build method:
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.purple,
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            onPressed: () {
-                              // Perform Google sign in mock
-                              _emailcontroller.text = "customer@example.com";
-                              _passwordController.text = "password123";
-                              _login();
-                            },
-                            icon: Image.asset(
-                              "assets/google2.png",
-                              height: 22,
-                              width: 22,
-                            ),
-                            label: const Text(
-                              "Continue with Google",
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
+                          ),
+                          onPressed: authProvider.isLoading
+                              ? null
+                              : () async {
+                                  final success = await authProvider
+                                      .loginWithGoogle();
+
+                                  if (!mounted) return;
+
+                                  if (success) {
+                                    // If login is successful, route directly to the dashboard
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      RouteName.home,
+                                    );
+                                  } else if (authProvider.error != null) {
+                                    // Display the concrete failure context returned from Supabase
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(authProvider.error!),
+                                        backgroundColor: Colors.redAccent,
+                                      ),
+                                    );
+                                  }
+                                },
+                          icon: Image.asset(
+                            "assets/google2.png",
+                            height: 22,
+                            width: 22,
+                          ),
+                          label: const Text(
+                            "Continue with Google",
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -227,14 +269,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             const Text(
                               "Don't have an account? ",
-                              style: TextStyle(color: Colors.white70, fontSize: 13),
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                              ),
                             ),
                             GestureDetector(
                               onTap: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const RegisterScreen(),
+                                    builder: (context) =>
+                                        const RegisterScreen(),
                                   ),
                                 );
                               },

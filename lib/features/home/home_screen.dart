@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:salon_app_view/features/salon_detail/salon_info.dart';
 import 'package:salon_app_view/features/salon_detail/services_screen.dart';
 import 'package:salon_app_view/features/appointment/appointment_screen.dart';
 import 'package:salon_app_view/features/profile/profile_screen.dart';
 import 'package:salon_app_view/core/router/route_name.dart';
-
-const kPurpleDark = Color(0xFF2D1B6B);
-const kPurpleMid = Color(0xFF3D2080);
-const kPurpleAccent = Color(0xFF7B5EA7);
-const kPurpleLight = Color(0xFF9B6FD4);
-const kWhite = Color(0xFFFFFFFF);
-const kTextMuted = Color(0xFFB8A9D9);
-
+import 'package:salon_app_view/shared/providers/auth_provider.dart';
+import 'package:salon_app_view/core/theme/app_theme.dart';
+import 'package:salon_app_view/shared/widgets/settings_sheet.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SalonHomeScreen extends StatefulWidget {
   const SalonHomeScreen({super.key});
@@ -23,7 +20,6 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
   int _bottomIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  
   final List<Map<String, String>> _nearbySalons = [
     {
       'name': 'Prince Hair Salon',
@@ -95,12 +91,38 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
     },
   ];
 
+  final List<Map<String, String>> _womenServices = [
+    {
+      'title': 'Hair Styling',
+      'image':
+          'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=300',
+    },
+    {
+      'title': 'Facial & Cleanup',
+      'image':
+          'https://images.unsplash.com/photo-1512290923902-8a9f81dc236c?w=300',
+    },
+    {
+      'title': 'Manicure',
+      'image':
+          'https://images.unsplash.com/photo-1604654894610-df4906b18563?w=300',
+    },
+    {
+      'title': 'Hair Coloring',
+      'image':
+          'https://images.unsplash.com/photo-1605497746444-ac9da58d440f?w=300',
+    },
+  ];
+
+  AppThemeColors get colors => AppThemeColors.of(context);
+
   @override
   Widget build(BuildContext context) {
+    final kPurpleDark = colors.purpleDark;
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: kPurpleDark,
-      drawer: _AppDrawer(
+      drawer: AppDrawer(
         onTabSelected: (index) {
           setState(() {
             _bottomIndex = index;
@@ -136,11 +158,11 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                       const SizedBox(height: 28),
                       _buildSectionTitle('  Services for Men'),
                       const SizedBox(height: 12),
-                      _buildMenServices(),
+                      _buildServicesGrid(_menServices),
                       const SizedBox(height: 28),
                       _buildSectionTitle('  Services for Women'),
                       const SizedBox(height: 12),
-                      _buildMenServices(), // reuse with different data in real app
+                      _buildServicesGrid(_womenServices),
                       const SizedBox(height: 32),
                     ],
                   ),
@@ -160,48 +182,53 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
     }
   }
 
-  // ── Top App Bar ─────────────────────────────────────────
   Widget _buildTopBar() {
+    final kPurpleMid = colors.purpleMid;
+    final kWhite = colors.white;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       color: kPurpleMid,
       child: Row(
         children: [
-          // Hamburger
           GestureDetector(
             onTap: () => _scaffoldKey.currentState?.openDrawer(),
-            child: const Icon(Icons.menu_rounded, color: kWhite, size: 26),
+            child: Icon(Icons.menu_rounded, color: kWhite, size: 26),
           ),
           const Spacer(),
-          // Location
-          GestureDetector(
-            onTap: () {},
-            child: const Row(
-              children: [
-                Text(
-                  'Location',
-                  style: TextStyle(
-                    color: kWhite,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+          Flexible(
+            child: GestureDetector(
+              onTap: () {},
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      'Location',
+                      style: TextStyle(
+                        color: kWhite,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-                SizedBox(width: 4),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: kWhite,
-                  size: 20,
-                ),
-              ],
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: kWhite,
+                    size: 20,
+                  ),
+                ],
+              ),
             ),
           ),
           const Spacer(),
-          // Notification bell with badge
           GestureDetector(
             onTap: () => Navigator.pushNamed(context, RouteName.notifications),
             child: Stack(
               children: [
-                const Icon(Icons.notifications_outlined, color: kWhite, size: 26),
+                Icon(Icons.notifications_outlined, color: kWhite, size: 26),
                 Positioned(
                   top: 0,
                   right: 0,
@@ -222,11 +249,11 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
     );
   }
 
-  // ── Section Title ────────────────────────────────────────
   Widget _buildSectionTitle(String title) {
+    final kWhite = colors.white;
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         color: kWhite,
         fontSize: 18,
         fontWeight: FontWeight.w700,
@@ -235,8 +262,11 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
     );
   }
 
-  // ── Nearby Salons Horizontal List ────────────────────────
   Widget _buildNearbySalons() {
+    final kPurpleAccent = colors.purpleAccent;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     return SizedBox(
       height: 160,
       child: ListView.separated(
@@ -248,6 +278,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
           final salon = _nearbySalons[i];
           return GestureDetector(
             onTap: () {
+              // Ensure SalonModel matches your project definition structure
               final selectedSalon = SalonModel(
                 name: salon['name']!,
                 location: salon['location']!,
@@ -272,27 +303,27 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Image
                     Image.network(
                       salon['image']!,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: kPurpleAccent,
-                        child: const Icon(Icons.store, color: kWhite, size: 40),
+                        child: Icon(Icons.store, color: kWhite, size: 40),
                       ),
                     ),
-                    // Gradient overlay
                     Container(
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [Colors.transparent, Color(0xCC1A0A4B)],
-                          stops: [0.4, 1.0],
+                          colors: [
+                            Colors.transparent,
+                            kPurpleAccent.withOpacity(0.8),
+                          ],
+                          stops: const [0.4, 1.0],
                         ),
                       ),
                     ),
-                    // Text
                     Positioned(
                       bottom: 10,
                       left: 10,
@@ -302,7 +333,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                         children: [
                           Text(
                             salon['name']!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: kWhite,
                               fontWeight: FontWeight.w700,
                               fontSize: 13,
@@ -313,10 +344,9 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                           const SizedBox(height: 2),
                           Text(
                             salon['location']!,
-                            style: const TextStyle(
-                              color: kTextMuted,
-                              fontSize: 11,
-                            ),
+                            style: TextStyle(color: kTextMuted, fontSize: 11),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
@@ -331,10 +361,10 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
     );
   }
 
-  // ── Tagline Banner ───────────────────────────────────────
   Widget _buildTagline() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16),
+    final kPurpleLight = colors.purpleLight;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Text(
         'Are you ready to\nexperience a Different you',
         textAlign: TextAlign.center,
@@ -349,8 +379,12 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
     );
   }
 
-  // ── Offers Row ───────────────────────────────────────────
   Widget _buildOffersRow() {
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleDark = colors.purpleDark;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     return SizedBox(
       height: 200,
       child: ListView.separated(
@@ -382,7 +416,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                           end: Alignment.centerLeft,
                           colors: [
                             Colors.transparent,
-                            kPurpleDark.withOpacity(0.85),
+                            kPurpleDark.withValues(alpha: 0.85),
                           ],
                         ),
                       ),
@@ -395,7 +429,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                         children: [
                           Text(
                             offer['title']!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: kWhite,
                               fontSize: 20,
                               fontWeight: FontWeight.w800,
@@ -405,7 +439,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                           const SizedBox(height: 12),
                           Text(
                             offer['discount']!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: kTextMuted,
                               fontSize: 13,
                               height: 1.4,
@@ -424,17 +458,19 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
     );
   }
 
-  // ── Men Services Grid ─────────────────────────────────────
-  Widget _buildMenServices() {
+  Widget _buildServicesGrid(List<Map<String, String>> servicesList) {
+    final kPurpleAccent = colors.purpleAccent;
+    final kWhite = colors.white;
+
     return SizedBox(
       height: 130,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _menServices.length,
+        itemCount: servicesList.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (ctx, i) {
-          final svc = _menServices[i];
+          final svc = servicesList[i];
           return GestureDetector(
             onTap: () {},
             child: Column(
@@ -449,7 +485,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: kPurpleAccent,
-                        child: const Icon(Icons.person, color: kWhite),
+                        child: Icon(Icons.person, color: kWhite),
                       ),
                     ),
                   ),
@@ -457,7 +493,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                 const SizedBox(height: 6),
                 Text(
                   svc['title']!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: kWhite,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -471,8 +507,11 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
     );
   }
 
-  // ── Bottom Nav Bar ────────────────────────────────────────
   Widget _buildBottomNav() {
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleLight = colors.purpleLight;
+    final kTextMuted = colors.textMuted;
+
     const items = [
       {'icon': Icons.home_rounded, 'label': 'Home'},
       {'icon': Icons.explore_outlined, 'label': 'Explore'},
@@ -481,9 +520,9 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
     ];
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: kPurpleMid,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         top: false,
@@ -503,7 +542,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: selected
-                        ? kPurpleLight.withOpacity(0.2)
+                        ? kPurpleLight.withValues(alpha: 0.2)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -538,145 +577,327 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
   }
 }
 
-class _AppDrawer extends StatelessWidget {
-  const _AppDrawer({required this.onTabSelected});
+// class _AppDrawer extends StatelessWidget {
+//   const _AppDrawer({required this.onTabSelected});
+//   final ValueChanged<int> onTabSelected;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final user = Supabase.instance.client.auth.currentUser;
+//    // final authProvider = Provider.of<AuthProvider>(context);
+//     final String userEmail = user?.email ?? 'No Email';
+// // Check Supabase metadata if you attached a name during sign up
+// final String userName = user?.userMetadata?['name'] ?? 'Guest User';
+
+//     // Fixed: Corrected missing bracket token syntax for safely isolating first initial
+//     final userInitials = userName.isNotEmpty ? userName[0].toUpperCase() : 'U';
+
+//     final colors = AppThemeColors.of(context);
+// return Drawer(
+//   child: ListView(
+//     children: [
+//       UserAccountsDrawerHeader(
+//         accountName: Text(userName),
+//         accountEmail: Text(userEmail),
+//         currentAccountPicture: const CircleAvatar(child: Icon(Icons.person)),
+//       ),
+//       // ... rest of your drawer items
+//          Container(
+//               width: double.infinity,
+//               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+//               color: colors.purpleAccent,
+//               child: Row(
+//                 children: [
+//                   CircleAvatar(
+//                     radius: 28,
+//                     backgroundColor: Colors.white24,
+//                     child: Text(
+//                       userInitials,
+//                       style: const TextStyle(
+//                         color: Colors.white,
+//                         fontSize: 22,
+//                         fontWeight: FontWeight.w700,
+//                       ),
+//                     ),
+//                   ),
+//                   const SizedBox(width: 14),
+//                   Expanded(
+//                     child: Column(
+//                       crossAxisAlignment: CrossAxisAlignment.start,
+//                       children: [
+//                         Text(
+//                           userName,
+//                           style: const TextStyle(
+//                             color: Colors.white,
+//                             fontWeight: FontWeight.w600,
+//                             fontSize: 16,
+//                           ),
+//                         ),
+//                         const SizedBox(height: 2),
+//                         Text(
+//                           userEmail,
+//                           style: const TextStyle(color: Colors.white70, fontSize: 12),
+//                         ),
+//                       ],
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             ),
+//             const SizedBox(height: 8),
+//             Expanded(
+//               child: ListView(
+//                 padding: EdgeInsets.zero,
+//                 children: [
+//                   _DrawerItem(
+//                     icon: Icons.home_outlined,
+//                     label: 'Home',
+//                     onTap: () {
+//                       Navigator.pop(context);
+//                       onTabSelected(0);
+//                     },
+//                   ),
+//                   _DrawerItem(
+//                     icon: Icons.calendar_today_outlined,
+//                     label: 'My Appointments',
+//                     onTap: () {
+//                       Navigator.pop(context);
+//                       onTabSelected(2);
+//                     },
+//                   ),
+//                   _DrawerItem(
+//                     icon: Icons.favorite_border_rounded,
+//                     label: 'Wishlist',
+//                     onTap: () {
+//                       Navigator.pop(context);
+//                       Navigator.pushNamed(context, RouteName.wishlist);
+//                     },
+//                   ),
+//                   _DrawerItem(
+//                     icon: Icons.local_offer_outlined,
+//                     label: 'Offers & Promos',
+//                     badge: '3',
+//                     onTap: () {},
+//                   ),
+//                   _DrawerItem(
+//                     icon: Icons.person_outline_rounded,
+//                     label: 'Profile',
+//                     onTap: () {
+//                       Navigator.pop(context);
+//                       onTabSelected(3);
+//                     },
+//                   ),
+//                   _DrawerItem(
+//                     icon: Icons.settings_outlined,
+//                     label: 'Settings',
+//                     onTap: () {
+//                       Navigator.pop(context);
+//                       showSettingsBottomSheet(context);
+//                     },
+//                   ),
+//                   Divider(
+//                     indent: 20,
+//                     endIndent: 20,
+//                     height: 24,
+//                     color: colors.purpleLight.withOpacity(0.2),
+//                   ),
+//                   _DrawerItem(
+//                     icon: Icons.help_outline_rounded,
+//                     label: 'Help & Support',
+//                     onTap: () {},
+//                   ),
+//                   _DrawerItem(
+//                     icon: Icons.logout_rounded,
+//                     label: 'Logout',
+//                     iconColor: Colors.redAccent,
+//                     labelColor: Colors.redAccent,
+//                     onTap: () {
+//                       Navigator.pop(context);
+//                       _showLogoutDialog(context);
+//                     },
+//                   ),
+//                 ],
+//               ),
+//             ),
+//             Padding(
+//               padding: const EdgeInsets.all(20),
+//               child: Text(
+//                 'Version 1.0.0',
+//                 style: TextStyle(color: colors.textMuted, fontSize: 12),
+//               ),
+//             ),
+//     ],
+//   ),
+// );
+//   }
+
+class AppDrawer extends StatelessWidget {
+  const AppDrawer({super.key, required this.onTabSelected});
   final ValueChanged<int> onTabSelected;
 
   @override
   Widget build(BuildContext context) {
+    // Watch the AuthProvider for changes
+    final authProvider = context.watch<AuthProvider>();
+    final user = authProvider.user;
+
+    // Pull email and user_metadata dynamically
+    final String email = user?.email ?? 'Guest User';
+    final String name = user?.userMetadata?['name'] ?? 'Welcome!';
+
     return Drawer(
-      backgroundColor: Colors.white,
-      child: SafeArea(
-        child: Column(
-          children: [
-          
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-              color: Colors.deepPurple,
-              child: const Row(
-                children: [
-                  // Avatar
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.white24,
-                    child: const Text(
-                      'R',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 14),
-                  
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Rahul Sharma',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'rahul@email.com',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          UserAccountsDrawerHeader(
+            accountName: Text(name),
+            accountEmail: Text(email),
+            currentAccountPicture: const CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, color: Colors.brown),
             ),
-
-            const SizedBox(height: 8),
-
-            
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.zero,
-                children: [
-                  _DrawerItem(
-                    icon: Icons.home_outlined,
-                    label: 'Home',
-                    onTap: () {
-                      Navigator.pop(context);
-                      onTabSelected(0);
-                    },
-                  ),
-                  _DrawerItem(
-                    icon: Icons.calendar_today_outlined,
-                    label: 'My Appointments',
-                    onTap: () {
-                      Navigator.pop(context);
-                      onTabSelected(2);
-                    },
-                  ),
-                  _DrawerItem(
-                    icon: Icons.favorite_border_rounded,
-                    label: 'Favourites',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, RouteName.wishlist);
-                    },
-                  ),
-                  _DrawerItem(
-                    icon: Icons.local_offer_outlined,
-                    label: 'Offers & Promos',
-                    badge: '3',
-                    onTap: () {},
-                  ),
-                  _DrawerItem(
-                    icon: Icons.person_outline_rounded,
-                    label: 'Profile',
-                    onTap: () {
-                      Navigator.pop(context);
-                      onTabSelected(3);
-                    },
-                  ),
-                  _DrawerItem(
-                    icon: Icons.settings_outlined,
-                    label: 'Settings',
-                    onTap: () {},
-                  ),
-                  const Divider(indent: 20, endIndent: 20, height: 24),
-                  _DrawerItem(
-                    icon: Icons.help_outline_rounded,
-                    label: 'Help & Support',
-                    onTap: () {},
-                  ),
-                  _DrawerItem(
-                    icon: Icons.logout_rounded,
-                    label: 'Logout',
-                    iconColor: Colors.redAccent,
-                    labelColor: Colors.redAccent,
-                    onTap: () {},
-                  ),
-                ],
-              ),
+            decoration: const BoxDecoration(
+              color: Colors.brown, // Or your app theme color
             ),
-
-           
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text(
-                'Version 1.0.0',
-                style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
-              ),
-            ),
-          ],
-        ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.home),
+            title: const Text('Home'),
+            onTap: () => Navigator.pop(context),
+          ),
+          // ... other items ...
+          _DrawerItem(
+            icon: Icons.calendar_today_outlined,
+            label: 'My Appointments',
+            onTap: () {
+              Navigator.pop(context);
+              onTabSelected(2);
+            },
+          ),
+          _DrawerItem(
+            icon: Icons.favorite_border_rounded,
+            label: 'Wishlist',
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, RouteName.wishlist);
+            },
+          ),
+          _DrawerItem(
+            icon: Icons.local_offer_outlined,
+            label: 'Offers & Promos',
+            badge: '3',
+            onTap: () {},
+          ),
+          _DrawerItem(
+            icon: Icons.person_outline_rounded,
+            label: 'Profile',
+            onTap: () {
+              Navigator.pop(context);
+              onTabSelected(3);
+            },
+          ),
+          _DrawerItem(
+            icon: Icons.settings_outlined,
+            label: 'Settings',
+            onTap: () {
+              Navigator.pop(context);
+              showSettingsBottomSheet(context);
+            },
+          ),
+          Divider(
+            indent: 20,
+            endIndent: 20,
+            height: 24,
+            color: Colors.purple.withValues(alpha: 0.2),
+          ),
+          _DrawerItem(
+            icon: Icons.help_outline_rounded,
+            label: 'Help & Support',
+            onTap: () {},
+          ),
+          _DrawerItem(
+            icon: Icons.logout_rounded,
+            label: 'Logout',
+            iconColor: Colors.redAccent,
+            labelColor: Colors.redAccent,
+            onTap: () {
+              Navigator.pop(context);
+              _showLogoutDialog(context);
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Logout', style: TextStyle(color: Colors.red)),
+            onTap: () async {
+              await Supabase.instance.client.auth.signOut();
+              if (context.mounted) {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  RouteName.login,
+                  (route) => false,
+                );
+              }
+            },
+          ),
+        ],
       ),
     );
   }
 }
 
+void _showLogoutDialog(BuildContext context) {
+  final colors = AppThemeColors.of(context);
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      backgroundColor: colors.purpleMid,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(
+        'Log out?',
+        style: TextStyle(color: colors.white, fontWeight: FontWeight.w700),
+      ),
+      content: Text(
+        'Are you sure you want to log out?',
+        style: TextStyle(color: colors.textMuted, fontSize: 13),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancel', style: TextStyle(color: colors.textMuted)),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            final navigator = Navigator.of(context);
+            navigator.pop(); // Close dialog
+
+            // Fixed: Call 'logoutUser()' to match the exact method defined inside your AuthProvider
+            Provider.of<AuthProvider>(context, listen: false).logoutUser();
+
+            navigator.pushNamedAndRemoveUntil(
+              RouteName.login,
+              (route) => false,
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colors.purpleAccent,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            elevation: 0,
+          ),
+          child: const Text(
+            'Log out',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+// Fixed: Removed the broken custom extension on User? entirely since name metadata configuration is handled elegantly inside AuthProvider. userName is now checked contextually.
 
 class _DrawerItem extends StatelessWidget {
   const _DrawerItem({
@@ -691,19 +912,20 @@ class _DrawerItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final String? badge; // optional red badge text e.g. '3'
+  final String? badge;
   final Color? iconColor;
   final Color? labelColor;
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
-      leading: Icon(icon, color: iconColor ?? Colors.black87, size: 22),
+      leading: Icon(icon, color: iconColor ?? colors.white, size: 22),
       title: Text(
         label,
         style: TextStyle(
-          color: labelColor ?? Colors.black87,
+          color: labelColor ?? colors.white,
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),

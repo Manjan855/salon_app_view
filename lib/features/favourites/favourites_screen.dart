@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:salon_app_view/features/salon_detail/salon_info.dart';
 import 'package:salon_app_view/features/salon_detail/services_screen.dart';
+import 'package:salon_app_view/core/theme/app_theme.dart';
 
-const kPurpleDark = Color(0xFF1A0A3B);
-const kPurpleMid = Color(0xFF2D1B6B);
-const kPurpleAccent = Color(0xFF7B2FBE);
-const kPurpleLight = Color(0xFF9B6FD4);
-const kWhite = Color(0xFFFFFFFF);
-const kTextMuted = Color(0xFFB8A9D9);
 const kGold = Color(0xFFFFD700);
 
 class FavouritesScreen extends StatefulWidget {
@@ -28,7 +23,8 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
       offerText: 'Offers on Haircuts',
       price: '₹150 for Men',
       discount: '35% off',
-      image: 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=300',
+      image:
+          'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=300',
     ),
     const SalonModel(
       name: 'Affinity Salon',
@@ -44,10 +40,18 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+    final kPurpleDark = colors.purpleDark;
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     return Scaffold(
       backgroundColor: kPurpleDark,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Favourites',
           style: TextStyle(color: kWhite, fontWeight: FontWeight.w700),
         ),
@@ -55,7 +59,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
         elevation: 0,
         leading: Navigator.canPop(context)
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: kWhite),
+                icon: Icon(Icons.arrow_back_rounded, color: kWhite),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
@@ -67,11 +71,11 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                 children: [
                   Icon(
                     Icons.favorite_border_rounded,
-                    color: kTextMuted.withOpacity(0.3),
+                    color: kTextMuted.withAlpha(77),
                     size: 72,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'No Favourites Yet',
                     style: TextStyle(
                       color: kWhite,
@@ -80,7 +84,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Your favorite salons will show up here.',
                     style: TextStyle(color: kTextMuted, fontSize: 13),
                   ),
@@ -98,7 +102,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                     color: kPurpleMid,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: kPurpleLight.withOpacity(0.2),
+                      color: kPurpleLight.withAlpha(51),
                       width: 0.5,
                     ),
                   ),
@@ -119,7 +123,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                                   width: 80,
                                   height: 80,
                                   color: kPurpleAccent,
-                                  child: const Icon(Icons.store, color: kWhite),
+                                  child: Icon(Icons.store, color: kWhite),
                                 ),
                               ),
                             ),
@@ -130,7 +134,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                                 children: [
                                   Text(
                                     salon.name,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: kWhite,
                                       fontSize: 15,
                                       fontWeight: FontWeight.w700,
@@ -139,7 +143,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                                   const SizedBox(height: 4),
                                   Text(
                                     salon.location,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: kTextMuted,
                                       fontSize: 12,
                                     ),
@@ -147,13 +151,21 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                                   const SizedBox(height: 6),
                                   Row(
                                     children: [
-                                      const Icon(Icons.star_rounded, color: kGold, size: 16),
+                                      const Icon(
+                                        Icons.star_rounded,
+                                        color: kGold,
+                                        size: 16,
+                                      ),
                                       const SizedBox(width: 4),
-                                      Text(
-                                        '${salon.rating} (${salon.ratingCount} reviews)',
-                                        style: const TextStyle(
-                                          color: kTextMuted,
-                                          fontSize: 12,
+                                      Expanded(
+                                        child: Text(
+                                          '${salon.rating} (${salon.ratingCount} reviews)',
+                                          style: TextStyle(
+                                            color: kTextMuted,
+                                            fontSize: 12,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
@@ -162,7 +174,10 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.favorite_rounded, color: Colors.redAccent),
+                              icon: const Icon(
+                                Icons.favorite_rounded,
+                                color: Colors.redAccent,
+                              ),
                               onPressed: () {
                                 setState(() {
                                   _favSalons.removeAt(i);
@@ -172,15 +187,18 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                           ],
                         ),
                       ),
-                      Container(height: 0.5, color: kPurpleLight.withOpacity(0.2)),
+                      Container(height: 0.5, color: kPurpleLight.withAlpha(51)),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               salon.price,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: kWhite,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -191,14 +209,18 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => SalonServicesScreen(salon: salon),
+                                    builder: (_) =>
+                                        SalonServicesScreen(salon: salon),
                                   ),
                                 );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: kPurpleAccent,
                                 foregroundColor: kWhite,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -206,9 +228,13 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                                 minimumSize: Size.zero,
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Book Now',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: kWhite,
+                                ),
                               ),
                             ),
                           ],

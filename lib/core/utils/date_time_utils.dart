@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+//Date is avilable
+
 class DateTimeUtils {
   // Format date to string
   static String formatDate(DateTime date, {String pattern = 'MMM dd, yyyy'}) {

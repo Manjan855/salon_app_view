@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:salon_app_view/core/theme/app_theme.dart';
 
-const kPurpleDark = Color(0xFF1A0A3B);
-const kPurpleMid = Color(0xFF2D1B6B);
-const kPurpleAccent = Color(0xFF7B2FBE);
-const kPurpleLight = Color(0xFF9B6FD4);
-const kWhite = Color(0xFFFFFFFF);
-const kTextMuted = Color(0xFFB8A9D9);
+
 
 class NotificationModel {
   final String title;
@@ -20,7 +16,7 @@ class NotificationModel {
     required this.message,
     required this.time,
     required this.icon,
-    this.iconColor = kPurpleLight,
+    this.iconColor = const Color(0xFF9B6FD4),
     this.isRead = false,
   });
 }
@@ -59,10 +55,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppThemeColors.of(context);
+    final kPurpleDark = colors.purpleDark;
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     return Scaffold(
       backgroundColor: kPurpleDark,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Notifications',
           style: TextStyle(color: kWhite, fontWeight: FontWeight.w700),
         ),
@@ -70,7 +74,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         elevation: 0,
         leading: Navigator.canPop(context)
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: kWhite),
+                icon: Icon(Icons.arrow_back_rounded, color: kWhite),
                 onPressed: () => Navigator.pop(context),
               )
             : null,
@@ -84,7 +88,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   }
                 });
               },
-              child: const Text(
+              child: Text(
                 'Mark read',
                 style: TextStyle(color: kPurpleLight, fontWeight: FontWeight.w600),
               ),
@@ -98,11 +102,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 children: [
                   Icon(
                     Icons.notifications_none_rounded,
-                    color: kTextMuted.withOpacity(0.3),
+                    color: kTextMuted.withValues(alpha:0.3),
                     size: 72,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'No Notifications',
                     style: TextStyle(
                       color: kWhite,
@@ -111,7 +115,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Your transactions and updates will show up here.',
                     style: TextStyle(color: kTextMuted, fontSize: 13),
                   ),
@@ -146,7 +150,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                       Text(
                         notif.time,
-                        style: const TextStyle(color: kTextMuted, fontSize: 11),
+                        style: TextStyle(color: kTextMuted, fontSize: 11),
                       ),
                     ],
                   ),
@@ -154,7 +158,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       notif.message,
-                      style: const TextStyle(color: kTextMuted, fontSize: 13, height: 1.4),
+                      style: TextStyle(color: kTextMuted, fontSize: 13, height: 1.4),
                     ),
                   ),
                   onTap: () {

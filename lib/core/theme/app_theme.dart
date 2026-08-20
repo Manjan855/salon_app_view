@@ -229,3 +229,53 @@ class AppTheme {
     ),
   );
 }
+
+class AppThemeColors {
+  final Color purpleDark;
+  final Color purpleMid;
+  final Color purpleAccent;
+  final Color purpleLight;
+  final Color white;
+  final Color textMuted;
+  final Color disabled;
+
+  const AppThemeColors({
+    required this.purpleDark,
+    required this.purpleMid,
+    required this.purpleAccent,
+    required this.purpleLight,
+    required this.white,
+    required this.textMuted,
+    required this.disabled,
+  });
+
+  static AppThemeColors of(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (isDark) {
+      return const AppThemeColors(
+        purpleDark: Color(0xFF1A0A3B),
+        purpleMid: Color(0xFF2D1B6B),
+        purpleAccent: Color(0xFF7B2FBE),
+        purpleLight: Color(0xFF9B6FD4),
+        white: Color(0xFFFFFFFF),
+        textMuted: Color(0xFFB8A9D9),
+        disabled: Color(0xFF4A4A6A),
+      );
+    } else {
+      return const AppThemeColors(
+        purpleDark: Color(0xFFF6F3F9), // Light background
+        purpleMid: Color(0xFFFFFFFF),  // White card surface
+        purpleAccent: Color(0xFF673AB7), // Vibrant primary purple
+        purpleLight: Color(0xFF9E77DC),  // Medium purple details
+        white: Color(0xFF2D1B6B),      // Dark purple for text instead of white
+        textMuted: Color(0xFF756F86),  // Muted gray-purple text
+        disabled: Color(0xFFD6D3DF),   // Soft gray-purple disabled background
+      );
+    }
+  }
+}
+
+extension AppThemeColorsExtension on BuildContext {
+  AppThemeColors get themeColors => AppThemeColors.of(this);
+}
+

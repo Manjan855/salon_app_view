@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:salon_app_view/core/router/route_name.dart';
+import 'package:salon_app_view/shared/providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,15 +25,21 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigateNext() async {
-    if (!mounted) return;
     final prefs = await SharedPreferences.getInstance();
     final bool seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
 
+    // 1. Check if context is still valid before retrieving the Provider
+    if (!mounted) return;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // 2. Removed 'await authProvider.loadUser();' since user state is handled synchronously
     if (seenOnboarding) {
-      // If onboarding already seen, go directly to Home
-      Navigator.pushReplacementNamed(context, RouteName.home);
+      if (authProvider.isAuthenticated) {
+        Navigator.pushReplacementNamed(context, RouteName.home);
+      } else {
+        Navigator.pushReplacementNamed(context, RouteName.login);
+      }
     } else {
-      // Otherwise, go to Onboarding
       Navigator.pushReplacementNamed(context, RouteName.onboard);
     }
   }

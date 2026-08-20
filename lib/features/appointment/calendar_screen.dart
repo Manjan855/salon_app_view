@@ -1,11 +1,5 @@
 import 'package:flutter/material.dart';
-
-const kPurpleDark = Color(0xFF1A0A3B);
-const kPurpleMid = Color(0xFF2D1B6B);
-const kPurpleAccent = Color(0xFF7B2FBE);
-const kPurpleLight = Color(0xFF9B6FD4);
-const kWhite = Color(0xFFFFFFFF);
-const kTextMuted = Color(0xFFB8A9D9);
+import 'package:salon_app_view/core/theme/app_theme.dart';
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -18,6 +12,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _focusedMonth = DateTime(2022, 8);
   DateTime? _selectedDate = DateTime(2022, 8, 15);
   int _bottomIndex = 0;
+
+  AppThemeColors get colors => AppThemeColors.of(context);
 
   int get _daysInMonth =>
       DateUtils.getDaysInMonth(_focusedMonth.year, _focusedMonth.month);
@@ -46,6 +42,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final kPurpleDark = colors.purpleDark;
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+
     return Scaffold(
       backgroundColor: kPurpleDark,
       body: SafeArea(
@@ -61,14 +64,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     alignment: Alignment.centerLeft,
                     child: GestureDetector(
                       onTap: () => Navigator.maybePop(context),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_rounded,
                         color: kWhite,
                         size: 24,
                       ),
                     ),
                   ),
-                  const Text(
+                  Text(
                     'Select Date',
                     style: TextStyle(
                       color: kWhite,
@@ -102,7 +105,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               _focusedMonth.month - 1,
                             );
                           }),
-                          child: const Icon(
+                          child: Icon(
                             Icons.chevron_left_rounded,
                             color: kTextMuted,
                             size: 22,
@@ -110,7 +113,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         ),
                         Text(
                           '${_monthName(_focusedMonth.month)} ${_focusedMonth.year}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: kWhite,
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -123,7 +126,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               _focusedMonth.month + 1,
                             );
                           }),
-                          child: const Icon(
+                          child: Icon(
                             Icons.chevron_right_rounded,
                             color: kTextMuted,
                             size: 22,
@@ -146,7 +149,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 child: Center(
                                   child: Text(
                                     d,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: kWhite,
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
@@ -212,6 +215,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   Widget _buildDayGrid() {
     final cells = <Widget>[];
+    final kPurpleAccent = colors.purpleAccent;
+    final kPurpleLight = colors.purpleLight;
+    final kWhite = colors.white;
 
     // Empty cells before first day
     for (int i = 0; i < _firstWeekday; i++) {
@@ -274,6 +280,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
       Icons.home_rounded,
       Icons.search_rounded,
     ];
+    final kPurpleMid = colors.purpleMid;
+    final kPurpleAccent = colors.purpleAccent;
+    final kTextMuted = colors.textMuted;
+
     return Container(
       height: 56 + MediaQuery.of(context).padding.bottom,
       color: kPurpleMid,

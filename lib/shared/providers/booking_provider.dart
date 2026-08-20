@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:salon_app_view/repositories/booking_repositories.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/booking_model.dart';
 
-class BookingProvider extends ChangeNotifier {
+class BookingProvider with ChangeNotifier {
+  final BookingRepository _bookingRepo = BookingRepository();
+
   List<BookingModel> _bookings = [];
   BookingModel? _currentBooking;
   bool _isLoading = false;
@@ -12,25 +16,27 @@ class BookingProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  // Get upcoming bookings
+  // --- GETTERS (Filtering lists locally out of cached state) ---
+
+  // Get upcoming bookings (Confirmed and occurring in the future)
   List<BookingModel> get upcomingBookings {
     return _bookings
         .where(
           (booking) =>
               booking.status == 'confirmed' &&
-              booking.date.isAfter(DateTime.now()),
+              booking.bookingDateTime.isAfter(DateTime.now()),
         )
         .toList();
   }
 
-  // Get past bookings
+  // Get past bookings (Completed or confirmed but expired)
   List<BookingModel> get pastBookings {
     return _bookings
         .where(
           (booking) =>
               booking.status == 'completed' ||
               (booking.status == 'confirmed' &&
-                  booking.date.isBefore(DateTime.now())),
+                  booking.bookingDateTime.isBefore(DateTime.now())),
         )
         .toList();
   }
@@ -40,263 +46,185 @@ class BookingProvider extends ChangeNotifier {
     return _bookings.where((booking) => booking.status == 'cancelled').toList();
   }
 
-  // Create booking
-  Future<bool> createBooking({
-    required String salonId,
-    required String salonName,
-    required String serviceId,
-    required String serviceName,
-    required double price,
-    required DateTime date,
-    required TimeOfDay time,
-    String? stylistId,
-    String? stylistName,
-  }) async {
-    _setLoading(true);
-    _clearError();
+  // --- ACTION METHODS (Communicating with Supabase Backend) ---
 
-    try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
-
-      _currentBooking = BookingModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        salonId: salonId,
-        salonName: salonName,
-        serviceId: serviceId,
-        serviceName: serviceName,
-        stylistId: stylistId,
-        stylistName: stylistName,
-        date: date,
-        time: time,
-        totalAmount: price,
-        status: 'pending',
-      );
-
-      _setLoading(false);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      _setLoading(false);
-      return false;
-    }
-  }
-
-  // Confirm booking
-  Future<bool> confirmBooking() async {
-    if (_currentBooking == null) {
-      _error = 'No booking to confirm';
-      return false;
-    }
-
-    _setLoading(true);
-
-    try {
-      await Future.delayed(const Duration(seconds: 1));
-
-      _currentBooking = BookingModel(
-        id: _currentBooking!.id,
-        salonId: _currentBooking!.salonId,
-        salonName: _currentBooking!.salonName,
-        serviceId: _currentBooking!.serviceId,
-        serviceName: _currentBooking!.serviceName,
-        stylistId: _currentBooking!.stylistId,
-        stylistName: _currentBooking!.stylistName,
-        date: _currentBooking!.date,
-        time: _currentBooking!.time,
-        totalAmount: _currentBooking!.totalAmount,
-        status: 'confirmed',
-      );
-
-      // Add to bookings list
-      _bookings.add(_currentBooking!);
-
-      _setLoading(false);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      _setLoading(false);
-      return false;
-    }
-  }
-
-  // Get user bookings
+  // 1. Fetch live user bookings from the database
   Future<void> fetchUserBookings() async {
     _setLoading(true);
     _clearError();
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Sample bookings data
-      _bookings = [
-        BookingModel(
-          id: '1',
-          salonId: '1',
-          salonName: 'Glamour Studio',
-          serviceId: '1',
-          serviceName: 'Haircut & Styling',
-          stylistId: '1',
-          stylistName: 'Jane Smith',
-          date: DateTime.now().add(const Duration(days: 2)),
-          time: const TimeOfDay(hour: 14, minute: 30),
-          totalAmount: 35.00,
-          status: 'confirmed',
-        ),
-        BookingModel(
-          id: '2',
-          salonId: '2',
-          salonName: 'Royal Beauty Spa',
-          serviceId: '2',
-          serviceName: 'Premium Facial',
-          stylistId: '2',
-          stylistName: 'Sarah Johnson',
-          date: DateTime.now().add(const Duration(days: 5)),
-          time: const TimeOfDay(hour: 11, minute: 0),
-          totalAmount: 50.00,
-          status: 'confirmed',
-        ),
-        BookingModel(
-          id: '3',
-          salonId: '1',
-          salonName: 'Glamour Studio',
-          serviceId: '3',
-          serviceName: 'Manicure & Pedicure',
-          date: DateTime.now().subtract(const Duration(days: 3)),
-          time: const TimeOfDay(hour: 15, minute: 0),
-          totalAmount: 40.00,
-          status: 'completed',
-        ),
-        BookingModel(
-          id: '4',
-          salonId: '3',
-          salonName: 'Luxury Nails',
-          serviceId: '4',
-          serviceName: 'Nail Art',
-          date: DateTime.now().add(const Duration(days: 1)),
-          time: const TimeOfDay(hour: 10, minute: 0),
-          totalAmount: 25.00,
-          status: 'pending',
-        ),
-      ];
-
+      _bookings = await _bookingRepo.getUserBookings();
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception:', '');
+    } finally {
       _setLoading(false);
+    }
+  }
+
+  // 2. Step One: Stage a pending booking inside local app memory
+  void stageBooking({
+    required String salonId,
+    required double totalPrice,
+    required DateTime selectedDate,
+    required TimeOfDay selectedTime,
+  }) {
+    _clearError();
+
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    if (currentUserId == null) {
+      _error = "You must be logged in to build an appointment reservation.";
       notifyListeners();
-    } catch (e) {
-      _error = e.toString();
-      _setLoading(false);
+      return;
     }
+
+    // Combine Date and TimeOfDay into a single DateTime object for PostgreSQL compatibility
+    final bookingDateTime = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+      selectedTime.hour,
+      selectedTime.minute,
+    );
+
+    _currentBooking = BookingModel(
+      id: '', // Blank id since Supabase generates UUID automatically on insert
+      userId: currentUserId,
+      salonId: salonId,
+      bookingDateTime: bookingDateTime,
+      totalPrice: totalPrice,
+      status: 'pending',
+    );
+    notifyListeners();
   }
 
-  // Get booking by ID
-  BookingModel? getBookingById(String bookingId) {
-    try {
-      return _bookings.firstWhere((booking) => booking.id == bookingId);
-    } catch (e) {
-      return null;
+  // 3. Step Two: Commit the staged booking directly to Supabase cloud
+  Future<bool> confirmAndSaveBooking() async {
+    if (_currentBooking == null) {
+      _error = 'No staged booking session found to confirm';
+      return false;
     }
-  }
 
-  // Cancel booking
-  Future<bool> cancelBooking(String bookingId) async {
     _setLoading(true);
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      // Modify status before sending payload
+      final bookingToSave = BookingModel(
+        id: _currentBooking!.id,
+        userId: _currentBooking!.userId,
+        salonId: _currentBooking!.salonId,
+        bookingDateTime: _currentBooking!.bookingDateTime,
+        totalPrice: _currentBooking!.totalPrice,
+        status: 'confirmed',
+      );
 
-      final index = _bookings.indexWhere((booking) => booking.id == bookingId);
-      if (index != -1) {
-        final booking = _bookings[index];
-        _bookings[index] = BookingModel(
-          id: booking.id,
-          salonId: booking.salonId,
-          salonName: booking.salonName,
-          serviceId: booking.serviceId,
-          serviceName: booking.serviceName,
-          stylistId: booking.stylistId,
-          stylistName: booking.stylistName,
-          date: booking.date,
-          time: booking.time,
-          totalAmount: booking.totalAmount,
-          status: 'cancelled',
-        );
-      }
+      // Save to database via repository
+      await _bookingRepo.createBooking(bookingToSave);
 
-      // Also update current booking if it's the same
-      if (_currentBooking?.id == bookingId) {
-        _currentBooking = BookingModel(
-          id: _currentBooking!.id,
-          salonId: _currentBooking!.salonId,
-          salonName: _currentBooking!.salonName,
-          serviceId: _currentBooking!.serviceId,
-          serviceName: _currentBooking!.serviceName,
-          stylistId: _currentBooking!.stylistId,
-          stylistName: _currentBooking!.stylistName,
-          date: _currentBooking!.date,
-          time: _currentBooking!.time,
-          totalAmount: _currentBooking!.totalAmount,
-          status: 'cancelled',
-        );
-      }
+      // Refresh local cache to include newly generated ticket row
+      await fetchUserBookings();
 
-      _setLoading(false);
-      notifyListeners();
+      _currentBooking = null; // Reset slot
       return true;
     } catch (e) {
-      _error = e.toString();
-      _setLoading(false);
+      _error = e.toString().replaceAll('Exception:', '');
       return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  // Reschedule booking
+  // 4. Cancel booking inside Supabase DB
+  Future<bool> cancelBooking(String bookingId) async {
+    _setLoading(true);
+    _clearError();
+
+    try {
+      // Update database record status string safely to cancelled
+      await Supabase.instance.client
+          .from('bookings')
+          .update({'status': 'cancelled'})
+          .eq('id', bookingId);
+
+      // Fast sync local list item state layout
+      final index = _bookings.indexWhere((b) => b.id == bookingId);
+      if (index != -1) {
+        _bookings[index] = BookingModel(
+          id: _bookings[index].id,
+          userId: _bookings[index].userId,
+          salonId: _bookings[index].salonId,
+          bookingDateTime: _bookings[index].bookingDateTime,
+          totalPrice: _bookings[index].totalPrice,
+          status: 'cancelled',
+        );
+      }
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // 5. Reschedule booking date/time in backend database
   Future<bool> rescheduleBooking({
     required String bookingId,
     required DateTime newDate,
     required TimeOfDay newTime,
   }) async {
     _setLoading(true);
+    _clearError();
+
+    final updatedDateTime = DateTime(
+      newDate.year,
+      newDate.month,
+      newDate.day,
+      newTime.hour,
+      newTime.minute,
+    );
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      await Supabase.instance.client
+          .from('bookings')
+          .update({'booking_date_time': updatedDateTime.toIso8601String()})
+          .eq('id', bookingId);
 
-      final index = _bookings.indexWhere((booking) => booking.id == bookingId);
+      // Fast update targeted model within current cache stream
+      final index = _bookings.indexWhere((b) => b.id == bookingId);
       if (index != -1) {
-        final booking = _bookings[index];
         _bookings[index] = BookingModel(
-          id: booking.id,
-          salonId: booking.salonId,
-          salonName: booking.salonName,
-          serviceId: booking.serviceId,
-          serviceName: booking.serviceName,
-          stylistId: booking.stylistId,
-          stylistName: booking.stylistName,
-          date: newDate,
-          time: newTime,
-          totalAmount: booking.totalAmount,
-          status: 'confirmed',
+          id: _bookings[index].id,
+          userId: _bookings[index].userId,
+          salonId: _bookings[index].salonId,
+          bookingDateTime: updatedDateTime,
+          totalPrice: _bookings[index].totalPrice,
+          status: _bookings[index].status,
         );
       }
-
-      _setLoading(false);
-      notifyListeners();
       return true;
     } catch (e) {
       _error = e.toString();
-      _setLoading(false);
       return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  // Clear current booking
+  BookingModel? getBookingById(String bookingId) {
+    try {
+      return _bookings.firstWhere((booking) => booking.id == bookingId);
+    } catch (_) {
+      return null;
+    }
+  }
+
   void clearCurrentBooking() {
     _currentBooking = null;
     notifyListeners();
   }
 
-  // Helper methods
+  // --- INTERNAL UTILS ---
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
