@@ -88,7 +88,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   // Handle Email/Password Login
-  Future<bool> login({required String email, required String password}) async {
+  Future<bool> login(String trim,  {required String email, required String password}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();

@@ -46,6 +46,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (registered) {
         // FIXED: Added 'email:' and 'password:' labels to match named parameters
         await authProvider.login(
+          _emailController.text.trim(), 
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
