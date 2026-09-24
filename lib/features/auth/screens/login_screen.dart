@@ -94,10 +94,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Logo row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-
                     children: [
                       Image.asset("assets/hair2.png", width: 70, height: 70),
-
                       SvgPicture.asset(
                         "assets/hair.svg",
                         width: 70,
@@ -199,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        // Login / Sign Up CTA
+                        // Login CTA
                         authProvider.isLoading
                             ? const Center(
                                 child: CircularProgressIndicator(
@@ -214,7 +212,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 16),
 
                         // Google Sign In
-                       // Locate the ElevatedButton.icon block inside your LoginScreen build method:
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
@@ -233,13 +230,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   if (!mounted) return;
 
                                   if (success) {
-                                    // If login is successful, route directly to the dashboard
                                     Navigator.pushReplacementNamed(
                                       context,
                                       RouteName.home,
                                     );
                                   } else if (authProvider.error != null) {
-                                    // Display the concrete failure context returned from Supabase
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(authProvider.error!),
