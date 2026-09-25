@@ -131,23 +131,23 @@ class _PersonaScreenState extends State<PersonaScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // // Phone Number
-                        // shared.CustomTextField(
-                        //   controller: _phoneController,
-                        //   label: "Phone Number",
-                        //   hint: "Enter 10-digit phone number",
-                        //   prefixIcon: Icons.phone_outlined,
-                        //   keyboardType: TextInputType.phone,
-                        //   validator: (val) {
-                        //     if (val == null || val.trim().isEmpty) {
-                        //       return "Phone number is required";
-                        //     }
-                        //     if (val.trim().length < 8) {
-                        //       return "Enter a valid phone number";
-                        //     }
-                        //     return null;
-                        //   },
-                        // ),
+                        // Phone Number
+                        shared.CustomTextField(
+                          controller: _phoneController,
+                          label: "Phone Number",
+                          hint: "Enter 10-digit phone number",
+                          prefixIcon: Icons.phone_outlined,
+                          keyboardType: TextInputType.phone,
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty) {
+                              return "Phone number is required";
+                            }
+                            if (val.trim().length < 8) {
+                              return "Enter a valid phone number";
+                            }
+                            return null;
+                          },
+                        ),
                         const SizedBox(height: 28),
 
                         // Save Button
