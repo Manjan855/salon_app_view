@@ -26,7 +26,7 @@ class _PersonaScreenState extends State<PersonaScreen> {
   void _loadExistingProfile() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null) {
-      // Pre-fill full name from metadata if available (e.g., from Google auth)
+      
       final name =
           user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
       if (name != null) {
@@ -150,7 +150,6 @@ class _PersonaScreenState extends State<PersonaScreen> {
                         ),
                         const SizedBox(height: 28),
 
-                        // Save Button
                         _isSaving
                             ? const CircularProgressIndicator(
                                 color: Color(0xFFC56AFF),
