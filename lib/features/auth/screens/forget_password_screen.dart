@@ -26,13 +26,13 @@ class ForgetPasswordScreen extends StatelessWidget {
                 child: Column(
                   children: [
                     const Text("Forget Password Page"),
-                    const SizedBox(height: 24),
-                    const CustomButton(title: 'Enter you Gmail'),
-                    const SizedBox(height: 15),
-                    const CustomButton(title: 'Enter your password'),
-                    const SizedBox(height: 15),
-                    const CustomButton(title: 'Renter your Password'),
-                    const SizedBox(height: 40),
+                    // const SizedBox(height: 24),
+                    // const CustomButton(title: 'Enter you Gmail'),
+                    // const SizedBox(height: 15),
+                    // const CustomButton(title: 'Enter your password'),
+                    // const SizedBox(height: 15),
+                    // const CustomButton(title: 'Renter your Password'),
+                    // const SizedBox(height: 40),
                     SizedBox(
                       height: 50,
                       width: double.infinity,
