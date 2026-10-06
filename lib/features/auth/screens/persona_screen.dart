@@ -28,7 +28,7 @@ class _PersonaScreenState extends State<PersonaScreen> {
     if (user != null) {
       
       final name =
-          user.userMetadata?['full_name'] ?? user.userMetadata?['name'];
+          user.userMetadata?['name'] ?? user.userMetadata?['full_name'];
       if (name != null) {
         _fullNameController.text = name;
       }
@@ -54,7 +54,7 @@ class _PersonaScreenState extends State<PersonaScreen> {
       // Upsert profile data into Supabase 'profiles' table
       await Supabase.instance.client.from('profiles').upsert({
         'id': user.id,
-        'full_name': _fullNameController.text.trim(),
+        'name': _fullNameController.text.trim(),
         'phone': _phoneController.text.trim(),
         'updated_at': DateTime.now().toIso8601String(),
       });

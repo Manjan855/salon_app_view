@@ -18,24 +18,24 @@ class BookingProvider with ChangeNotifier {
 
   // --- GETTERS (Filtering lists locally out of cached state) ---
 
-  // Get upcoming bookings (Confirmed and occurring in the future)
+  // Get upcoming bookings (Pending or confirmed and occurring in the future)
   List<BookingModel> get upcomingBookings {
     return _bookings
         .where(
           (booking) =>
-              booking.status == 'confirmed' &&
+              booking.isActive &&
               booking.bookingDateTime.isAfter(DateTime.now()),
         )
         .toList();
   }
 
-  // Get past bookings (Completed or confirmed but expired)
+  // Get past bookings (Completed or active but expired)
   List<BookingModel> get pastBookings {
     return _bookings
         .where(
           (booking) =>
-              booking.status == 'completed' ||
-              (booking.status == 'confirmed' &&
+              booking.isCompleted ||
+              (booking.isActive &&
                   booking.bookingDateTime.isBefore(DateTime.now())),
         )
         .toList();
@@ -65,9 +65,12 @@ class BookingProvider with ChangeNotifier {
   // 2. Step One: Stage a pending booking inside local app memory
   void stageBooking({
     required String salonId,
+    String? staffId,
+    required DateTime date,
+    required DateTime start,
+    required DateTime end,
     required double totalPrice,
-    required DateTime selectedDate,
-    required TimeOfDay selectedTime,
+    String? notes,
   }) {
     _clearError();
 
@@ -78,22 +81,15 @@ class BookingProvider with ChangeNotifier {
       return;
     }
 
-    // Combine Date and TimeOfDay into a single DateTime object for PostgreSQL compatibility
-    final bookingDateTime = DateTime(
-      selectedDate.year,
-      selectedDate.month,
-      selectedDate.day,
-      selectedTime.hour,
-      selectedTime.minute,
-    );
-
-    _currentBooking = BookingModel(
-      id: '', // Blank id since Supabase generates UUID automatically on insert
+    _currentBooking = BookingModel.staged(
       userId: currentUserId,
       salonId: salonId,
-      bookingDateTime: bookingDateTime,
+      staffId: staffId,
+      date: date,
+      start: start,
+      end: end,
       totalPrice: totalPrice,
-      status: 'pending',
+      notes: notes,
     );
     notifyListeners();
   }
@@ -108,14 +104,21 @@ class BookingProvider with ChangeNotifier {
     _setLoading(true);
 
     try {
-      // Modify status before sending payload
+      // RLS only accepts `pending` on insert: the salon promotes it to
+      // `confirmed` once it accepts the appointment.
       final bookingToSave = BookingModel(
-        id: _currentBooking!.id,
+        id: '',
         userId: _currentBooking!.userId,
         salonId: _currentBooking!.salonId,
-        bookingDateTime: _currentBooking!.bookingDateTime,
+        staffId: _currentBooking!.staffId,
+        bookingDate: _currentBooking!.bookingDate,
+        startTime: _currentBooking!.startTime,
+        endTime: _currentBooking!.endTime,
         totalPrice: _currentBooking!.totalPrice,
-        status: 'confirmed',
+        status: 'pending',
+        paymentStatus: _currentBooking!.paymentStatus,
+        paymentProvider: _currentBooking!.paymentProvider,
+        notes: _currentBooking!.notes,
       );
 
       // Save to database via repository
@@ -149,13 +152,24 @@ class BookingProvider with ChangeNotifier {
       // Fast sync local list item state layout
       final index = _bookings.indexWhere((b) => b.id == bookingId);
       if (index != -1) {
+        final b = _bookings[index];
         _bookings[index] = BookingModel(
-          id: _bookings[index].id,
-          userId: _bookings[index].userId,
-          salonId: _bookings[index].salonId,
-          bookingDateTime: _bookings[index].bookingDateTime,
-          totalPrice: _bookings[index].totalPrice,
+          id: b.id,
+          userId: b.userId,
+          salonId: b.salonId,
+          staffId: b.staffId,
+          bookingDate: b.bookingDate,
+          startTime: b.startTime,
+          endTime: b.endTime,
+          totalPrice: b.totalPrice,
           status: 'cancelled',
+          paymentStatus: b.paymentStatus,
+          paymentProvider: b.paymentProvider,
+          otpCode: b.otpCode,
+          notes: b.notes,
+          createdAt: b.createdAt,
+          salonName: b.salonName,
+          staffName: b.staffName,
         );
       }
       return true;
@@ -172,34 +186,61 @@ class BookingProvider with ChangeNotifier {
     required String bookingId,
     required DateTime newDate,
     required TimeOfDay newTime,
+    Duration duration = const Duration(minutes: 60),
   }) async {
     _setLoading(true);
     _clearError();
 
-    final updatedDateTime = DateTime(
+    final index = _bookings.indexWhere((b) => b.id == bookingId);
+    final existing = index != -1 ? _bookings[index] : null;
+
+    final start = DateTime(
       newDate.year,
       newDate.month,
       newDate.day,
       newTime.hour,
       newTime.minute,
     );
+    final end = start.add(
+      existing != null ? existing.duration : duration,
+    );
+
+    String two(int v) => v.toString().padLeft(2, '0');
+    final dateStr = '${newDate.year}-${two(newDate.month)}-${two(newDate.day)}';
+    final startStr = '${two(start.hour)}:${two(start.minute)}:00';
+    final endStr = '${two(end.hour)}:${two(end.minute)}:00';
 
     try {
+      // booking_date_time and otp_code are trigger-derived: only the split
+      // date/time columns are writable here.
       await Supabase.instance.client
           .from('bookings')
-          .update({'booking_date_time': updatedDateTime.toIso8601String()})
+          .update({
+            'booking_date': dateStr,
+            'start_time': startStr,
+            'end_time': endStr,
+          })
           .eq('id', bookingId);
 
       // Fast update targeted model within current cache stream
-      final index = _bookings.indexWhere((b) => b.id == bookingId);
-      if (index != -1) {
+      if (existing != null) {
         _bookings[index] = BookingModel(
-          id: _bookings[index].id,
-          userId: _bookings[index].userId,
-          salonId: _bookings[index].salonId,
-          bookingDateTime: updatedDateTime,
-          totalPrice: _bookings[index].totalPrice,
-          status: _bookings[index].status,
+          id: existing.id,
+          userId: existing.userId,
+          salonId: existing.salonId,
+          staffId: existing.staffId,
+          bookingDate: DateTime(newDate.year, newDate.month, newDate.day),
+          startTime: startStr,
+          endTime: endStr,
+          totalPrice: existing.totalPrice,
+          status: existing.status,
+          paymentStatus: existing.paymentStatus,
+          paymentProvider: existing.paymentProvider,
+          otpCode: existing.otpCode,
+          notes: existing.notes,
+          createdAt: existing.createdAt,
+          salonName: existing.salonName,
+          staffName: existing.staffName,
         );
       }
       return true;
