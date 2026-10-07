@@ -56,6 +56,10 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  # Pure-Dart Supabase client, used by tool/key_smoke.dart so the script can
+  # run under `dart run` (supabase_flutter drags in Flutter/FFI and crashes the
+  # standalone VM compiler).
+  supabase: ^2.12.2
   
 
   # The "flutter_lints" package below contains a set of recommended lints to

@@ -44,5 +44,40 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# ---------------------------------------------------------------------------
+# Secrets — never commit, whatever you add later. This repo is pushed to GitHub
+# on every edit, so anything matching these patterns stays local.
+# ---------------------------------------------------------------------------
+
 # Local Supabase credentials (--dart-define-from-file); commit only the .example
-/config/supabase.json
+/config/*.json
+!/config/supabase.example.json
+
+# Generic env files (.env, .env.local, .env.production, ...)
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Supabase CLI local stack (secrets + local DB data)
+supabase/.temp/
+supabase/volumes/
+supabase/.env
+
+# Signing keys / keystores (Android, iOS, TLS)
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+android/key.properties
+android/local.properties
+
+# Third-party SDK configs that carry credentials
+GoogleService-Info.plist
+google-services.json
+serviceAccount*.json
+*-service-account.json
+
+# Never commit a secret key (sb_secret_...) — publishable keys are public by
+# design, secret keys bypass RLS entirely.

@@ -17,7 +17,7 @@ void main() async {
   // Initialize your Production Database Engine
   await Supabase.initialize(
     url: AppEnv.supabaseUrl,
-    publishableKey: AppEnv.supabaseAnonKey,
+    publishableKey: AppEnv.supabasePublishableKey,
     authOptions: const FlutterAuthClientOptions(
       authFlowType: AuthFlowType.pkce,
     ),

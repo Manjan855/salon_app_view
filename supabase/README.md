@@ -180,9 +180,15 @@ Replace with real uploads to the `salons` bucket before launch.
 - [x] Replace hardcoded Supabase URL + anon key in `lib/main.dart` with
       `--dart-define` (done: `lib/app_env.dart` +
       `--dart-define-from-file=config/supabase.json`, local file gitignored)
-- [ ] Rotate the anon key — it is still in git history, and the local
-      `config/supabase.json` currently holds the old one (update it after
-      rotating)
+- [x] Rotate the anon key — legacy `anon` JWT keys can't be re-minted, so the
+      Supabase migration path was followed: a **publishable key**
+      (`sb_publishable_...`) now lives in the local `config/supabase.json`
+      under `SUPABASE_PUBLISHABLE_KEY` (renamed from `SUPABASE_ANON_KEY` in
+      `lib/app_env.dart`), verified against `rest/v1` on both the `apikey` and
+      `Authorization: Bearer` headers with the `anon` role intact
+- [ ] **Deactivate the legacy `anon` key** in Settings → API Keys — it is still
+      in git history, so it stays live (and usable by anyone reading the repo)
+      until switched off; deactivation is reversible
 - [ ] Configure the OAuth redirect scheme (PKCE is on, but neither
       `AndroidManifest.xml` nor `Info.plist` declares one) — Google sign-in
       will fail on a real device without it

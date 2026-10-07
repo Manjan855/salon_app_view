@@ -13,16 +13,19 @@ class AppEnv {
   const AppEnv._();
 
   static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  static const String supabaseAnonKey =
-      String.fromEnvironment('SUPABASE_ANON_KEY');
+
+  /// The publishable (`sb_publishable_...`) key — safe to ship in the binary.
+  /// It only reaches what Row Level Security allows; never a secret key here.
+  static const String supabasePublishableKey =
+      String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
 
   /// True once both values were injected at build/run time.
   static const bool isConfigured =
-      supabaseUrl != '' && supabaseAnonKey != '';
+      supabaseUrl != '' && supabasePublishableKey != '';
 
   /// Human-readable guidance used when [isConfigured] is false.
   static const String missingConfigHint =
-      'SUPABASE_URL / SUPABASE_ANON_KEY were not injected.\n'
+      'SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY were not injected.\n'
       'Run the app with:\n'
       '  flutter run --dart-define-from-file=config/supabase.json\n'
       '(copy config/supabase.example.json to config/supabase.json first)';
