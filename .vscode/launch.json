@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flutter (dev, Supabase config)",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": ["--dart-define-from-file=config/supabase.json"]
+    },
+    {
+      "name": "Flutter (release build, Supabase config)",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": ["--dart-define-from-file=config/supabase.json"],
+      "flutterMode": "release"
+    }
+  ]
+}

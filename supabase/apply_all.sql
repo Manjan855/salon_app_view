@@ -77,12 +77,73 @@ create extension if not exists pg_trgm;
 
 -- -----------------------------------------------------------------------------
 -- Enums
+-- Idempotent: the legacy hand-made schema already owns some of these names
+-- (payment_status is confirmed to exist live, and enum types are invisible to
+-- PostgREST so a plain "create type" fails on the first run). Create when
+-- missing; when the existing definition differs, RENAME it aside (never drop)
+-- so legacy columns keep working, then create ours.
 -- -----------------------------------------------------------------------------
-create type public.persona_type as enum ('customer', 'salon_owner', 'stylist', 'admin');
-create type public.booking_status as enum ('pending', 'confirmed', 'completed', 'cancelled', 'no_show');
-create type public.payment_status as enum ('pending', 'paid', 'failed', 'refunded', 'expired');
-create type public.payment_provider as enum ('cash', 'esewa', 'khalti', 'connect_ips', 'ime_pay', 'fonepay');
-create type public.service_category as enum ('hair', 'beard', 'skin', 'spa', 'nails', 'makeup', 'massage', 'other');
+do $$
+declare
+  v_name   text;
+  v_labels text;
+  v_kind   text;   -- pg_type.typtype: e=enum, d=domain, c=composite, ...
+  v_have   text;   -- enum labels, marker for a non-enum type, or null (absent)
+  v_list   text;
+  v_alt    text;
+  v_n      int;
+begin
+  for v_name, v_labels in
+    select * from (values
+      ('persona_type',     'customer,salon_owner,stylist,admin'),
+      ('booking_status',   'pending,confirmed,completed,cancelled,no_show'),
+      ('payment_status',   'pending,paid,failed,refunded,expired'),
+      ('payment_provider', 'cash,esewa,khalti,connect_ips,ime_pay,fonepay'),
+      ('service_category', 'hair,beard,skin,spa,nails,makeup,massage,other')
+    ) as v(name, labels)
+  loop
+    -- what (if anything) already occupies public.<name>
+    select k.typtype,
+           (select string_agg(e.enumlabel, ',' order by e.enumsortorder)
+              from pg_enum e where e.enumtypid = k.oid)
+      into v_kind, v_have
+      from pg_type k
+      join pg_namespace n on n.oid = k.typnamespace
+     where n.nspname = 'public' and k.typname = v_name;
+
+    if v_kind is not null and v_kind <> 'e' then
+      v_have := '<non-enum type>';   -- occupies the name: move it aside too
+    end if;
+
+    if v_have is distinct from v_labels then
+      if v_have is not null then
+        v_alt := v_name || '_legacy';
+        v_n   := 0;
+        while exists (select 1 from pg_type t
+                        join pg_namespace n on n.oid = t.typnamespace
+                       where n.nspname = 'public' and t.typname = v_alt)
+        loop
+          v_n   := v_n + 1;
+          v_alt := v_name || '_legacy' || v_n;
+        end loop;
+
+        if v_kind = 'd' then
+          execute format('alter domain public.%I rename to %I', v_name, v_alt);
+        else
+          execute format('alter type   public.%I rename to %I', v_name, v_alt);
+        end if;
+        raise notice 'renamed pre-existing public.% to public.%', v_name, v_alt;
+      end if;
+
+      select string_agg(quote_literal(x), ', ' order by u.ord)
+        into v_list
+        from unnest(string_to_array(v_labels, ',')) with ordinality as u(x, ord);
+
+      execute format('create type public.%I as enum (%s)', v_name, v_list);
+    end if;
+  end loop;
+end;
+$$;
 
 -- -----------------------------------------------------------------------------
 -- profiles

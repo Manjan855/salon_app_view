@@ -13,7 +13,7 @@ supabase/
 │   ├── 20261006000003_rls.sql                     # 4. row level security + write guards
 │   ├── 20261006000004_storage.sql                 # 5. avatars / salons / services buckets
 │   └── 20261006000005_backfill_profiles.sql       # 6. profiles for pre-existing auth users
-└── seed.sql                                       # 7. 30 salons across all 7 provinces + coupons
+└── seed.sql                                       # 7. 29 salons across all 7 provinces + coupons
 ```
 
 `apply_all.sql` and `apply_storage.sql` are generated concatenations of the
@@ -62,6 +62,15 @@ succeeds or fully rolls back, so a failure leaves the project unchanged.
 Storage is split out deliberately — `create policy on storage.objects` needs
 elevated privileges in some projects, and a failure there must not roll back the
 core schema.
+
+**Pre-existing enums are handled.** The hand-made legacy schema owns a
+`payment_status` type in `public` (enum types are invisible to PostgREST, so
+the original audit could not see them). A plain `create type` therefore fails
+with `42710: type "payment_status" already exists`. The enum block now checks
+`pg_type` first: matching type → reuse it, differing/non-enum type →
+`alter type ... rename to <name>_legacy` (never dropped, legacy columns keep
+working), missing type → create it. If a run fails, the whole paste rolls
+back — the database is left untouched and the script can be re-run as-is.
 
 Afterwards, run the verification query at the bottom of this file.
 
@@ -156,7 +165,7 @@ select table_name from information_schema.tables
 
 ## Seeded data
 
-30 salons across Koshi, Madhesh, Bagmati, Gandaki, Lumbini, Karnali and
+29 salons across Koshi, Madhesh, Bagmati, Gandaki, Lumbini, Karnali and
 Sudurpashchim — Kathmandu, Lalitpur, Bhaktapur, Pokhara, Biratnagar, Dharan,
 Butwal, Janakpur, Birgunj, Dhangadhi and more. Each has 8–12 services priced in
 NPR, 3–4 stylists, and full-week availability.
@@ -168,8 +177,12 @@ Replace with real uploads to the `salons` bucket before launch.
 
 ## Post-launch checklist for this layer
 
-- [ ] Replace hardcoded Supabase URL + anon key in `lib/main.dart` with `--dart-define`
-- [ ] Rotate the anon key — it is currently committed to git history
+- [x] Replace hardcoded Supabase URL + anon key in `lib/main.dart` with
+      `--dart-define` (done: `lib/app_env.dart` +
+      `--dart-define-from-file=config/supabase.json`, local file gitignored)
+- [ ] Rotate the anon key — it is still in git history, and the local
+      `config/supabase.json` currently holds the old one (update it after
+      rotating)
 - [ ] Configure the OAuth redirect scheme (PKCE is on, but neither
       `AndroidManifest.xml` nor `Info.plist` declares one) — Google sign-in
       will fail on a real device without it

@@ -2,6 +2,32 @@
 
 A new Flutter project.
 
+## Running
+
+Supabase credentials are injected at build time — they are **not** in the
+source. First-time setup:
+
+```sh
+copy config\supabase.example.json config\supabase.json   # then fill in real values
+```
+
+Then always run with the config file:
+
+```sh
+flutter run --dart-define-from-file=config/supabase.json
+```
+
+VS Code: use the "Flutter (dev, Supabase config)" launch config (F5).
+
+Release builds:
+
+```sh
+flutter build apk --dart-define-from-file=config/supabase.json
+```
+
+If you forget the flag the app throws a clear `StateError` instead of failing
+with a cryptic 401.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
