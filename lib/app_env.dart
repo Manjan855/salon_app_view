@@ -19,6 +19,19 @@ class AppEnv {
   static const String supabasePublishableKey =
       String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
 
+  /// Deep link Supabase bounces the browser back to after an OAuth /
+  /// magic-link / password-reset round-trip (`scheme://host`).
+  ///
+  /// The exact same scheme + host MUST be declared in all three places:
+  /// * `android/app/src/main/AndroidManifest.xml` — VIEW / BROWSABLE
+  ///   intent-filter
+  /// * `ios/Runner/Info.plist` — `CFBundleURLTypes`
+  /// * the Supabase dashboard — Authentication → URL Configuration →
+  ///   Redirect URLs (Supabase rejects anything not on that allow list)
+  ///
+  /// `test/deep_link_test.dart` fails if the declarations drift apart.
+  static const String authRedirectUrl = 'salonappview://auth-callback';
+
   /// True once both values were injected at build/run time.
   static const bool isConfigured =
       supabaseUrl != '' && supabasePublishableKey != '';

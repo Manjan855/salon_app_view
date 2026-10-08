@@ -24,6 +24,24 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- Supabase PKCE/OAuth return link: the browser is bounced back to
+	     salonappview://auth-callback?code=... and iOS re-opens the app with
+	     it, where supabase_flutter's deep-link observer exchanges the code
+	     for the session. Must match AppEnv.authRedirectUrl and the
+	     intent-filter in android/app/src/main/AndroidManifest.xml. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>supabase.auth.redirect</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>salonappview</string>
+			</array>
+		</dict>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

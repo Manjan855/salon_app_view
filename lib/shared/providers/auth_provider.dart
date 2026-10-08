@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:salon_app_view/app_env.dart';
 import 'package:salon_app_view/repositories/auth_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -150,6 +151,12 @@ class AuthProvider with ChangeNotifier {
         email: email,
         password: password,
         data: {'name': name},
+        // If "Confirm email" is ever switched on, the confirmation link
+        // returns here instead of the project Site URL — with PKCE the
+        // ?code= lands in the app and is exchanged for the session.
+        // (The project currently has mailer_autoconfirm enabled, so no
+        // link is sent today; this is the ready-when-you-are wiring.)
+        emailRedirectTo: AppEnv.authRedirectUrl,
       );
 
       if (response.user != null) {

@@ -189,9 +189,25 @@ Replace with real uploads to the `salons` bucket before launch.
 - [ ] **Deactivate the legacy `anon` key** in Settings → API Keys — it is still
       in git history, so it stays live (and usable by anyone reading the repo)
       until switched off; deactivation is reversible
-- [ ] Configure the OAuth redirect scheme (PKCE is on, but neither
-      `AndroidManifest.xml` nor `Info.plist` declares one) — Google sign-in
-      will fail on a real device without it
-- [ ] Set a real Google `serverClientId` for production
+- [x] Configure the OAuth redirect scheme — `salonappview://auth-callback` is
+      now declared in `android/app/src/main/AndroidManifest.xml`
+      (VIEW / BROWSABLE intent-filter on `MainActivity`) and
+      `ios/Runner/Info.plist` (`CFBundleURLTypes`), exposed as
+      `AppEnv.authRedirectUrl` and passed as `emailRedirectTo` from
+      `AuthProvider.signUp`. `supabase_flutter` starts its deep-link observer
+      automatically (`detectSessionInUri` defaults to true), so a `?code=`
+      arriving on that link is exchanged for the session. The *native* Google
+      path (`google_sign_in` → `signInWithIdToken`) never leaves the app and
+      does not use this link; the scheme covers the browser flows — OAuth
+      fallback, magic link, password reset, confirmation link.
+      `test/deep_link_test.dart` fails if the three declarations drift apart.
+- [ ] **Add `salonappview://auth-callback` to the redirect allow list** —
+      Authentication → URL Configuration → Redirect URLs. Supabase rejects
+      any redirect that is not listed, so the link above only starts working
+      after this dashboard step (same hands-on step as the key flip)
+- [ ] Set a real Google `serverClientId` for production — Android also needs
+      that value as `defaultWebClientId`, iOS needs `GIDClientID` plus the
+      client ID's reversed form (`com.googleusercontent.apps.<CLIENT_ID>`)
+      as a `CFBundleURLSchemes` entry
 - [ ] Wire eSewa / Khalti merchant credentials through an edge function so
       `payments.status` can never be flipped by a client
