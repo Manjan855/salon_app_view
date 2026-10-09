@@ -7,14 +7,18 @@ const kRed = Color(0xFFE53935);
 
 // ─── Ordered Service Model ────────────────────────────────
 class OrderedService {
+  final String? serviceId;
   final String name;
   final double originalPrice;
   final double discountedPrice;
+  final int durationMinutes;
 
   const OrderedService({
+    this.serviceId,
     required this.name,
     required this.originalPrice,
     required this.discountedPrice,
+    this.durationMinutes = 30,
   });
 
   double get saved => originalPrice - discountedPrice;
@@ -23,12 +27,14 @@ class OrderedService {
 // ─── Review Order Screen ──────────────────────────────────
 class ReviewOrderScreen extends StatefulWidget {
   final List<OrderedService> services;
+  final String? salonId;
   final String salonName;
   final String salonLocation;
 
   const ReviewOrderScreen({
     super.key,
     required this.services,
+    this.salonId,
     required this.salonName,
     required this.salonLocation,
   });
@@ -50,7 +56,8 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
 
   double get _total => _services.fold(0, (sum, s) => sum + s.discountedPrice);
 
-  int get _totalMins => _services.length * 30;
+  int get _totalMins =>
+      _services.fold(0, (sum, s) => sum + s.durationMinutes);
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +252,7 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
                 child: Row(
                   children: [
                     Text(
-                      '₹${_total.toInt()}',
+                      'Rs ${_total.toInt()}',
                       style: TextStyle(
                         color: kWhite,
                         fontSize: 18,
@@ -271,8 +278,14 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        SlotsAvailabilityScreen(salonName: widget.salonName),
+                    builder: (_) => SlotsAvailabilityScreen(
+                      salonId: widget.salonId,
+                      salonName: widget.salonName,
+                      salonLocation: widget.salonLocation,
+                      services: _services,
+                      durationMinutes: _totalMins,
+                      totalAmount: _total,
+                    ),
                   ),
                 );
               },
@@ -351,7 +364,7 @@ class _OrderServiceTile extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    '₹${service.originalPrice.toInt()}',
+                    'Rs ${service.originalPrice.toInt()}',
                     style: TextStyle(
                       color: kTextMuted,
                       fontSize: 12,
@@ -361,7 +374,7 @@ class _OrderServiceTile extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '₹${service.discountedPrice.toInt()}',
+                    'Rs ${service.discountedPrice.toInt()}',
                     style: TextStyle(
                       color: kWhite,
                       fontSize: 14,
@@ -372,7 +385,7 @@ class _OrderServiceTile extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'Saved ₹${service.saved.toInt()}',
+                'Saved Rs ${service.saved.toInt()}',
                 style: const TextStyle(
                   color: kGreen,
                   fontSize: 10,

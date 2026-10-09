@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:salon_app_view/features/salon_detail/services_screen.dart';
 import 'package:salon_app_view/core/theme/app_theme.dart';
+import 'package:salon_app_view/shared/providers/salon_provider.dart';
+import 'package:salon_app_view/shared/providers/favourite_provider.dart';
 
 const kGold = Color(0xFFFFD700);
 const kGreen = Color(0xFF4CAF50);
 
 // ─── Salon Model ──────────────────────────────────────────
 class SalonModel {
+  /// `public.salons.id` — null only for the built-in demo rows.
+  final String? id;
   final String name;
   final String location;
   final double rating;
@@ -17,6 +22,7 @@ class SalonModel {
   final String image;
 
   const SalonModel({
+    this.id,
     required this.name,
     required this.location,
     required this.rating,
@@ -38,6 +44,16 @@ class SalonInfoScreen extends StatefulWidget {
 
 class _SalonInfoScreenState extends State<SalonInfoScreen> {
   String _selectedGender = 'All';
+  final TextEditingController _searchCtrl = TextEditingController();
+  bool _searchOpen = false;
+  String _query = '';
+  String _sortBy = 'Rating';
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
 
   final List<SalonModel> _salons = const [
     SalonModel(
@@ -98,9 +114,66 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
 
   AppThemeColors get colors => AppThemeColors.of(context);
 
+  static const String _defaultImage =
+      'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=300';
+
+  /// Prefer the live salons from Supabase; fall back to the demo rows only
+  /// when nothing has loaded (e.g. offline).
+  List<SalonModel> _resolveSalons(BuildContext context) {
+    final providerSalons = context.watch<SalonProvider>().salons;
+    final list = providerSalons.isEmpty
+        ? _salons
+        : providerSalons
+            .map(
+              (s) => SalonModel(
+                id: s.id,
+                name: s.name,
+                location: s.city.isNotEmpty ? s.city : s.address,
+                rating: s.ratingAvg,
+                ratingCount: s.ratingCount,
+                offerText: (s.description?.trim().isNotEmpty ?? false)
+                    ? s.description!
+                    : 'Quality grooming & beauty services',
+                price: 'Tap View for the price list',
+                discount: '',
+                image: s.imageUrl ?? _defaultImage,
+              ),
+            )
+            .toList();
+    return _applyQueryAndSort(list);
+  }
+
+  /// Applies the search query + sort choice locally (the salon list is small
+  /// enough to keep client-side; offline/demo rows work the same way).
+  List<SalonModel> _applyQueryAndSort(List<SalonModel> list) {
+    var result = list;
+    final q = _query.trim().toLowerCase();
+    if (q.isNotEmpty) {
+      result = result
+          .where((s) =>
+              s.name.toLowerCase().contains(q) ||
+              s.location.toLowerCase().contains(q))
+          .toList();
+    }
+
+    final sorted = [...result];
+    switch (_sortBy) {
+      case 'Distance':
+        sorted.sort((a, b) => a.location.compareTo(b.location));
+      case 'Price: Low':
+      case 'Price: High':
+        // Salons don't carry a price yet — keep rating order as a stable proxy.
+        sorted.sort((a, b) => b.rating.compareTo(a.rating));
+      default: // Rating
+        sorted.sort((a, b) => b.rating.compareTo(a.rating));
+    }
+    return sorted;
+  }
+
   @override
   Widget build(BuildContext context) {
     final kPurpleDark = colors.purpleDark;
+    final salons = _resolveSalons(context);
 
     return Scaffold(
       backgroundColor: kPurpleDark,
@@ -112,15 +185,15 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
             Expanded(
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                itemCount: _salons.length,
+                itemCount: salons.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (ctx, i) => _SalonCard(
-                  salon: _salons[i],
+                  salon: salons[i],
                   onViewTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => SalonServicesScreen(salon: _salons[i]),
+                        builder: (_) => SalonServicesScreen(salon: salons[i]),
                       ),
                     );
                   },
@@ -135,6 +208,54 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
 
   Widget _buildTopBar(BuildContext context) {
     final kWhite = colors.white;
+    final kTextMuted = colors.textMuted;
+    final kPurpleMid = colors.purpleMid;
+
+    if (_searchOpen) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () => setState(() {
+                _searchOpen = false;
+                _query = '';
+                _searchCtrl.clear();
+              }),
+              child: Icon(Icons.arrow_back_rounded, color: kWhite, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: TextField(
+                controller: _searchCtrl,
+                autofocus: true,
+                style: TextStyle(color: kWhite, fontSize: 15),
+                cursorColor: kWhite,
+                textInputAction: TextInputAction.search,
+                onChanged: (v) => setState(() => _query = v),
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: 'Search salons or city',
+                  hintStyle: TextStyle(color: kTextMuted, fontSize: 14),
+                  filled: true,
+                  fillColor: kPurpleMid,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: kTextMuted,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -152,7 +273,7 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
             const SizedBox(width: 24),
           const Spacer(),
           GestureDetector(
-            onTap: () {},
+            onTap: () => setState(() => _searchOpen = true),
             child: Icon(Icons.search_rounded, color: kWhite, size: 24),
           ),
         ],
@@ -240,7 +361,10 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => _FilterSheet(),
+      builder: (_) => _FilterSheet(
+        initialSort: _sortBy,
+        onApply: (sort) => setState(() => _sortBy = sort),
+      ),
     );
   }
 
@@ -424,22 +548,54 @@ class _SalonCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    GestureDetector(
-                      onTap: () {},
-                      child: Row(
-                        children: [
-                          Text(
-                            'Add to Favourites',
-                            style: TextStyle(color: kTextMuted, fontSize: 10),
+                    Builder(
+                      builder: (context) {
+                        final isFav = context
+                            .watch<FavouriteProvider>()
+                            .isFavourite(salon.id);
+                        return GestureDetector(
+                          onTap: salon.id == null
+                              ? null
+                              : () async {
+                                  try {
+                                    await context
+                                        .read<FavouriteProvider>()
+                                        .toggle(salon.id!);
+                                  } catch (e) {
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          e
+                                              .toString()
+                                              .replaceAll('Exception:', '')
+                                              .trim(),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                          child: Row(
+                            children: [
+                              Text(
+                                isFav ? 'Saved' : 'Add to Favourites',
+                                style: TextStyle(
+                                  color: isFav ? kPurpleLight : kTextMuted,
+                                  fontSize: 10,
+                                ),
+                              ),
+                              const SizedBox(width: 3),
+                              Icon(
+                                isFav
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                color: isFav ? Colors.redAccent : kTextMuted,
+                                size: 12,
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 3),
-                          Icon(
-                            Icons.favorite_border_rounded,
-                            color: kTextMuted,
-                            size: 12,
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -454,13 +610,17 @@ class _SalonCard extends StatelessWidget {
 
 // ─── Filter Bottom Sheet ──────────────────────────────────
 class _FilterSheet extends StatefulWidget {
+  const _FilterSheet({required this.initialSort, required this.onApply});
+  final String initialSort;
+  final ValueChanged<String> onApply;
+
   @override
   State<_FilterSheet> createState() => _FilterSheetState();
 }
 
 class _FilterSheetState extends State<_FilterSheet> {
   double _maxPrice = 200;
-  String _sortBy = 'Rating';
+  late String _sortBy = widget.initialSort;
   final _sorts = ['Rating', 'Distance', 'Price: Low', 'Price: High'];
 
   @override
@@ -600,7 +760,10 @@ class _FilterSheetState extends State<_FilterSheet> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                widget.onApply(_sortBy);
+                Navigator.pop(context);
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: kPurpleAccent,
                 foregroundColor: Colors.white,

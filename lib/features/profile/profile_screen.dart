@@ -4,6 +4,8 @@ import 'package:salon_app_view/core/router/route_name.dart';
 import 'package:salon_app_view/features/appointment/appointment_screen.dart';
 import 'package:salon_app_view/features/favourites/favourites_screen.dart';
 import 'package:salon_app_view/shared/providers/auth_provider.dart';
+import 'package:salon_app_view/shared/providers/coupon_provider.dart';
+import 'package:salon_app_view/shared/models/coupon_model.dart';
 import 'package:salon_app_view/shared/widgets/settings_sheet.dart';
 import 'package:salon_app_view/core/theme/app_theme.dart';
 
@@ -282,7 +284,51 @@ class ProfileScreen extends StatelessWidget {
 
   // ─── Modal Bottom Sheets ───────────────────────────────────
 
-  void _showPromocodesSheet(BuildContext context) {
+  /// Maps live coupons to the promo card's display fields. Falls back to a
+  /// small sample list so the sheet is never empty in offline/demo mode.
+  List<Map<String, String>> _promoDisplayList(List<CouponModel> coupons) {
+    if (coupons.isEmpty) {
+      return const [
+        {
+          'code': 'WELCOME50',
+          'desc': 'Get 50% off on your first salon booking.',
+          'valid': 'Valid till 30 Jun 2026',
+        },
+        {
+          'code': 'HAIRCUT30',
+          'desc': 'Save 30% on premium haircuts and styling.',
+          'valid': 'Valid till 15 Jun 2026',
+        },
+        {
+          'code': 'GLAM20',
+          'desc': 'Get 20% off on basic facials & treatments.',
+          'valid': 'Valid till 10 Jul 2026',
+        },
+      ];
+    }
+
+    String fmt(DateTime d) {
+      const months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      ];
+      final local = d.toLocal();
+      return 'Valid till ${local.day} ${months[local.month - 1]} ${local.year}';
+    }
+
+    return coupons.map((c) {
+      final max = c.maxDiscount;
+      return {
+        'code': c.code,
+        'desc': max != null
+            ? 'Get ${c.discountLabel} (up to Rs ${max.toStringAsFixed(0)}).'
+            : 'Get ${c.discountLabel} on eligible services.',
+        'valid': c.validTo != null ? fmt(c.validTo!) : 'Limited period offer',
+      };
+    }).toList();
+  }
+
+  Future<void> _showPromocodesSheet(BuildContext context) async {
     final colors = AppThemeColors.of(context);
     final kPurpleDark = colors.purpleDark;
     final kPurpleMid = colors.purpleMid;
@@ -291,23 +337,11 @@ class ProfileScreen extends StatelessWidget {
     final kWhite = colors.white;
     final kTextMuted = colors.textMuted;
 
-    final promocodes = [
-      {
-        'code': 'WELCOME50',
-        'desc': 'Get 50% off on your first salon booking.',
-        'valid': 'Valid till 30 Jun 2026',
-      },
-      {
-        'code': 'HAIRCUT30',
-        'desc': 'Save 30% on premium haircuts and styling.',
-        'valid': 'Valid till 15 Jun 2026',
-      },
-      {
-        'code': 'GLAM20',
-        'desc': 'Get 20% off on basic facials & treatments.',
-        'valid': 'Valid till 10 Jul 2026',
-      },
-    ];
+    // Prefer live coupons; fall back to sample codes while offline.
+    final couponProvider = context.read<CouponProvider>();
+    await couponProvider.ensureLoaded();
+    if (!context.mounted) return;
+    final promocodes = _promoDisplayList(couponProvider.coupons);
 
     showModalBottomSheet(
       context: context,

@@ -1,25 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:salon_app_view/core/theme/app_theme.dart';
-
-
-
-class NotificationModel {
-  final String title;
-  final String message;
-  final String time;
-  final IconData icon;
-  final Color iconColor;
-  bool isRead;
-
-  NotificationModel({
-    required this.title,
-    required this.message,
-    required this.time,
-    required this.icon,
-    this.iconColor = const Color(0xFF9B6FD4),
-    this.isRead = false,
-  });
-}
+import 'package:salon_app_view/shared/providers/auth_provider.dart';
+import 'package:salon_app_view/shared/providers/notification_provider.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -29,39 +12,46 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  final List<NotificationModel> _notifications = [
-    NotificationModel(
-      title: 'Booking Confirmed! 🎉',
-      message: 'Your slot at Prince Hair Salon on 28th May at 10:00 AM has been confirmed.',
-      time: '2 hours ago',
-      icon: Icons.calendar_today_rounded,
-      iconColor: Colors.greenAccent,
-    ),
-    NotificationModel(
-      title: 'Promo Code Applied! 🏷️',
-      message: 'Get up to 50% discount on women services using code SALON50.',
-      time: '1 day ago',
-      icon: Icons.local_offer_outlined,
-      iconColor: Colors.orangeAccent,
-    ),
-    NotificationModel(
-      title: 'Safety Warning 🛡️',
-      message: 'All stylists are fully vaccinated and sanitization protocols are maintained.',
-      time: '2 days ago',
-      icon: Icons.shield_outlined,
-      iconColor: Colors.blueAccent,
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final userId = context.read<AuthProvider>().user?.id;
+      context.read<NotificationProvider>().ensureLoaded(userId: userId);
+    });
+  }
+
+  (IconData, Color) _styleFor(String type) {
+    switch (type) {
+      case 'booking':
+      case 'appointment':
+        return (Icons.calendar_today_rounded, Colors.greenAccent);
+      case 'promo':
+      case 'coupon':
+      case 'offer':
+        return (Icons.local_offer_outlined, Colors.orangeAccent);
+      case 'payment':
+        return (Icons.payments_outlined, Colors.lightBlueAccent);
+      case 'safety':
+        return (Icons.shield_outlined, Colors.blueAccent);
+      default:
+        return (Icons.notifications_none_rounded, const Color(0xFF9B6FD4));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = AppThemeColors.of(context);
     final kPurpleDark = colors.purpleDark;
     final kPurpleMid = colors.purpleMid;
-    final kPurpleAccent = colors.purpleAccent;
     final kPurpleLight = colors.purpleLight;
     final kWhite = colors.white;
     final kTextMuted = colors.textMuted;
+
+    final provider = context.watch<NotificationProvider>();
+    final notifications = provider.notifications;
+    final signedIn = context.watch<AuthProvider>().user != null;
 
     return Scaffold(
       backgroundColor: kPurpleDark,
@@ -79,96 +69,123 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               )
             : null,
         actions: [
-          if (_notifications.isNotEmpty)
+          if (notifications.isNotEmpty && provider.unreadCount > 0)
             TextButton(
-              onPressed: () {
-                setState(() {
-                  for (var n in _notifications) {
-                    n.isRead = true;
-                  }
-                });
-              },
+              onPressed: () => provider.markAllRead(),
               child: Text(
                 'Mark read',
-                style: TextStyle(color: kPurpleLight, fontWeight: FontWeight.w600),
+                style:
+                    TextStyle(color: kPurpleLight, fontWeight: FontWeight.w600),
               ),
-            )
+            ),
         ],
       ),
-      body: _notifications.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.notifications_none_rounded,
-                    color: kTextMuted.withValues(alpha:0.3),
-                    size: 72,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No Notifications',
-                    style: TextStyle(
-                      color: kWhite,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Your transactions and updates will show up here.',
-                    style: TextStyle(color: kTextMuted, fontSize: 13),
-                  ),
-                ],
-              ),
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              itemCount: _notifications.length,
-              separatorBuilder: (_, __) => Container(
-                height: 0.5,
-                color: kPurpleLight.withOpacity(0.15),
-              ),
-              itemBuilder: (ctx, i) {
-                final notif = _notifications[i];
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  leading: CircleAvatar(
-                    backgroundColor: notif.iconColor.withOpacity(0.15),
-                    child: Icon(notif.icon, color: notif.iconColor, size: 20),
-                  ),
-                  title: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        notif.title,
-                        style: TextStyle(
-                          color: kWhite,
-                          fontSize: 14,
-                          fontWeight: notif.isRead ? FontWeight.w500 : FontWeight.w700,
+      body: provider.isLoading && notifications.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : notifications.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.notifications_none_rounded,
+                          color: kTextMuted.withValues(alpha: 0.3),
+                          size: 72,
                         ),
-                      ),
-                      Text(
-                        notif.time,
-                        style: TextStyle(color: kTextMuted, fontSize: 11),
-                      ),
-                    ],
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      notif.message,
-                      style: TextStyle(color: kTextMuted, fontSize: 13, height: 1.4),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No Notifications',
+                          style: TextStyle(
+                            color: kWhite,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          signedIn
+                              ? 'Booking updates and offers will show up here.'
+                              : 'Sign in to see your notifications.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: kTextMuted, fontSize: 13),
+                        ),
+                      ],
                     ),
                   ),
-                  onTap: () {
-                    setState(() {
-                      notif.isRead = true;
-                    });
-                  },
-                );
-              },
-            ),
+                )
+              : RefreshIndicator(
+                  onRefresh: () => provider.refresh(
+                    userId: context.read<AuthProvider>().user?.id,
+                  ),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    itemCount: notifications.length,
+                    separatorBuilder: (_, __) => Container(
+                      height: 0.5,
+                      color: kPurpleLight.withOpacity(0.15),
+                    ),
+                    itemBuilder: (ctx, i) {
+                      final notif = notifications[i];
+                      final (icon, color) = _styleFor(notif.type);
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        leading: CircleAvatar(
+                          backgroundColor: color.withOpacity(0.15),
+                          child: Icon(icon, color: color, size: 20),
+                        ),
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                notif.title,
+                                style: TextStyle(
+                                  color: kWhite,
+                                  fontSize: 14,
+                                  fontWeight: notif.isRead
+                                      ? FontWeight.w500
+                                      : FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              notif.relativeTime,
+                              style: TextStyle(color: kTextMuted, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            notif.body,
+                            style: TextStyle(
+                              color: kTextMuted,
+                              fontSize: 13,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                        trailing: notif.isRead
+                            ? null
+                            : Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: kPurpleLight,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                        onTap: () => provider.markRead(notif),
+                      );
+                    },
+                  ),
+                ),
     );
   }
 }

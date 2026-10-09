@@ -24,6 +24,9 @@ import 'package:salon_app_view/shared/providers/salon_provider.dart';
 import 'package:salon_app_view/shared/providers/booking_provider.dart';
 import 'package:salon_app_view/shared/providers/payment_provider.dart';
 import 'package:salon_app_view/shared/providers/theme_provider.dart';
+import 'package:salon_app_view/shared/providers/favourite_provider.dart';
+import 'package:salon_app_view/shared/providers/notification_provider.dart';
+import 'package:salon_app_view/shared/providers/coupon_provider.dart';
 
 /// Lets the deep-link handler surface a SnackBar even though it sits above the
 /// MaterialApp in the widget tree.
@@ -44,6 +47,9 @@ class RunApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (_) => PaymentProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => FavouriteProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ChangeNotifierProvider(create: (_) => CouponProvider()),
       ],
       // Handles `salonappview://payment-result?…` and kicks the app to refresh.
       child: const _PaymentLinkHandler(child: _ThemedApp()),

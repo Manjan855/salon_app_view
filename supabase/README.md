@@ -265,11 +265,30 @@ eSewa sandbox test wallet: id `9711111111` / password `Nepal@123` / OTP `123456`
 - [ ] **Create the `sb_secret_…` key and set the function secrets**, then
       deploy `payments` (see *One-time setup* above). Until this is done the
       function is not reachable — `/initiate` returns 404.
-- [ ] **Rebuild the booking funnel on real data** — the services → slots →
-      booking → appointment screens are still hardcoded mock data, so no row is
-      ever inserted into `bookings` and the app has no `bookingId` to pass to
-      `PaymentOptionsScreen`. Payments can only be exercised end-to-end once a
-      real booking exists.
+- [x] **Rebuild the booking funnel on real data** — **done for the
+      services → slots → booking → appointment path.** The entrance lists
+      (Home "Salons near you" and Explore) now read live rows from
+      `public.salons`; `SalonServicesScreen` loads `public.services`;
+      `SlotsAvailabilityScreen` calls the `get_available_slots()` RPC for a
+      picked date; `BookingSlotsScreen` loads `public.staff`, queries each
+      stylist's slots, and on confirm inserts the `bookings` row plus its
+      `booking_services` lines via `BookingProvider.createBooking()`. The new
+      `bookings.id` is passed to `PaymentOptionsScreen`, so online payment is
+      reachable. `MyAppointmentsScreen` renders the user's real bookings and
+      wires cancel. The mock data still remains as an offline/demo fallback
+      when a screen is opened without a real `salon.id`.
+- [x] **Wire the remaining static screens** — **done.** Wishlist/favourites now
+      read and write `public.favourites` (heart toggles on the Explore cards and
+      the salon header); the notifications inbox reads `public.notifications`
+      (unread badge on Home, mark-read / mark-all); the Home offers row and the
+      Profile "My promocodes" sheet read active `public.coupons` (the sample
+      list is kept as an offline fallback); Explore's search and sort now filter
+      the live salon list locally.
+- [ ] **Men/Women service tiles & the Gender filter** — the Home service tiles
+      now jump to Explore but cannot filter by service category (there is no
+      gender/category column on `salons`), and the Gender sheet is still
+      cosmetic. Wire these once a category/price facet exists on the salons
+      query (or drop the Gender filter).
 - [ ] **Drop the archived legacy schema** after launch:
       `drop schema archive cascade;` — removes the old hand-made tables for
       good (nothing is currently lost by leaving it in place).

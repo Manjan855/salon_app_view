@@ -6,6 +6,10 @@ import 'package:salon_app_view/features/appointment/appointment_screen.dart';
 import 'package:salon_app_view/features/profile/profile_screen.dart';
 import 'package:salon_app_view/core/router/route_name.dart';
 import 'package:salon_app_view/shared/providers/auth_provider.dart';
+import 'package:salon_app_view/shared/providers/salon_provider.dart';
+import 'package:salon_app_view/shared/providers/favourite_provider.dart';
+import 'package:salon_app_view/shared/providers/notification_provider.dart';
+import 'package:salon_app_view/shared/providers/coupon_provider.dart';
 import 'package:salon_app_view/core/theme/app_theme.dart';
 import 'package:salon_app_view/shared/widgets/settings_sheet.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -19,33 +23,6 @@ class SalonHomeScreen extends StatefulWidget {
 class _SalonHomeScreenState extends State<SalonHomeScreen> {
   int _bottomIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  final List<Map<String, String>> _nearbySalons = [
-    {
-      'name': 'Prince Hair Salon',
-      'location': 'Near Town Hall',
-      'image':
-          'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=300',
-    },
-    {
-      'name': 'Siddhi Beauty Parlour',
-      'location': 'Near Cinema Hall',
-      'image':
-          'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=300',
-    },
-    {
-      'name': 'CD Hair Studio',
-      'location': 'Near Cinema Hall',
-      'image':
-          'https://images.unsplash.com/photo-1582095133179-bfd08e2594b9?w=300',
-    },
-    {
-      'name': 'Glam Studio',
-      'location': 'Near MG Road',
-      'image':
-          'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=300',
-    },
-  ];
 
   final List<Map<String, String>> _offers = [
     {
@@ -117,6 +94,21 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
   AppThemeColors get colors => AppThemeColors.of(context);
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final userId = context.read<AuthProvider>().user?.id;
+      context.read<FavouriteProvider>().ensureLoaded(userId: userId);
+      context.read<NotificationProvider>().ensureLoaded(userId: userId);
+      context.read<CouponProvider>().ensureLoaded();
+    });
+  }
+
+  /// Home cards act as shortcuts into the Explore tab.
+  void _openExplore() => setState(() => _bottomIndex = 1);
+
+  @override
   Widget build(BuildContext context) {
     final kPurpleDark = colors.purpleDark;
     return Scaffold(
@@ -185,6 +177,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
   Widget _buildTopBar() {
     final kPurpleMid = colors.purpleMid;
     final kWhite = colors.white;
+    final unread = context.watch<NotificationProvider>().unreadCount;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -227,20 +220,34 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
           GestureDetector(
             onTap: () => Navigator.pushNamed(context, RouteName.notifications),
             child: Stack(
+              clipBehavior: Clip.none,
               children: [
                 Icon(Icons.notifications_outlined, color: kWhite, size: 26),
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: Colors.redAccent,
-                      shape: BoxShape.circle,
+                if (unread > 0)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
+                      constraints: const BoxConstraints(minWidth: 16),
+                      decoration: const BoxDecoration(
+                        color: Colors.redAccent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        unread > 9 ? '9+' : '$unread',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -267,32 +274,35 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
     final kWhite = colors.white;
     final kTextMuted = colors.textMuted;
 
+    final salons = context.watch<SalonProvider>().salons;
+
+    if (salons.isEmpty) {
+      return SizedBox(
+        height: 160,
+        child: Center(
+          child: Text(
+            'Loading salons…',
+            style: TextStyle(color: kTextMuted, fontSize: 12),
+          ),
+        ),
+      );
+    }
+
     return SizedBox(
       height: 160,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _nearbySalons.length,
+        itemCount: salons.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (ctx, i) {
-          final salon = _nearbySalons[i];
+          final salon = salons[i];
           return GestureDetector(
             onTap: () {
-              // Ensure SalonModel matches your project definition structure
-              final selectedSalon = SalonModel(
-                name: salon['name']!,
-                location: salon['location']!,
-                image: salon['image']!,
-                rating: 4.8,
-                ratingCount: 154,
-                offerText: 'Offers on haircuts',
-                price: '₹150 for Men',
-                discount: '30% off',
-              );
               Navigator.push(
                 ctx,
                 MaterialPageRoute(
-                  builder: (_) => SalonServicesScreen(salon: selectedSalon),
+                  builder: (_) => SalonServicesScreen(salon: salon),
                 ),
               );
             },
@@ -304,7 +314,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                   fit: StackFit.expand,
                   children: [
                     Image.network(
-                      salon['image']!,
+                      salon.imageUrl ?? '',
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: kPurpleAccent,
@@ -332,7 +342,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            salon['name']!,
+                            salon.name,
                             style: TextStyle(
                               color: kWhite,
                               fontWeight: FontWeight.w700,
@@ -343,7 +353,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            salon['location']!,
+                            salon.city,
                             style: TextStyle(color: kTextMuted, fontSize: 11),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -385,17 +395,28 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
     final kWhite = colors.white;
     final kTextMuted = colors.textMuted;
 
+    final coupons = context.watch<CouponProvider>().coupons;
+    final offers = coupons.isNotEmpty
+        ? coupons
+            .map((c) => {
+                  'title': c.code,
+                  'discount': c.discountLabel,
+                  'image': _offers.first['image']!,
+                })
+            .toList()
+        : _offers;
+
     return SizedBox(
       height: 200,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _offers.length,
+        itemCount: offers.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
         itemBuilder: (ctx, i) {
-          final offer = _offers[i];
+          final offer = offers[i];
           return GestureDetector(
-            onTap: () {},
+            onTap: _openExplore,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: SizedBox(
@@ -472,7 +493,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
         itemBuilder: (ctx, i) {
           final svc = servicesList[i];
           return GestureDetector(
-            onTap: () {},
+            onTap: _openExplore,
             child: Column(
               children: [
                 ClipRRect(
@@ -588,6 +609,7 @@ class AppDrawer extends StatelessWidget {
     // Watch the AuthProvider for changes
     final authProvider = context.watch<AuthProvider>();
     final user = authProvider.user;
+    final offerCount = context.watch<CouponProvider>().coupons.length;
 
     // Pull email and user_metadata dynamically
     final String email = user?.email ?? 'Guest User';
@@ -633,8 +655,11 @@ class AppDrawer extends StatelessWidget {
           _DrawerItem(
             icon: Icons.local_offer_outlined,
             label: 'Offers & Promos',
-            badge: '3',
-            onTap: () {},
+            badge: offerCount > 0 ? '$offerCount' : null,
+            onTap: () {
+              Navigator.pop(context);
+              onTabSelected(1);
+            },
           ),
           _DrawerItem(
             icon: Icons.person_outline_rounded,

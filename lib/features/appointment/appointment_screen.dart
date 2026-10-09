@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
+import 'package:provider/provider.dart';
 import 'package:salon_app_view/core/theme/app_theme.dart';
+import 'package:salon_app_view/shared/models/booking_model.dart';
+import 'package:salon_app_view/shared/providers/booking_provider.dart';
 
 const kRed = Color(0xFFE53935);
 
 // ─── Appointment Model ────────────────────────────────────
 class AppointmentModel {
+  final String id;
   final String salonName;
   final String location;
   final String date;
@@ -14,6 +17,7 @@ class AppointmentModel {
   final String otp;
 
   const AppointmentModel({
+    required this.id,
     required this.salonName,
     required this.location,
     required this.date,
@@ -37,39 +41,16 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
 
   AppThemeColors get colors => AppThemeColors.of(context);
 
-  final List<AppointmentModel> _appointments = [
-    const AppointmentModel(
-      salonName: 'Prince Hair Salon',
-      location: 'Near Town Hall',
-      date: '12 Oct 2022',
-      time: '9:00AM to 9:30AM',
-      status: 'ongoing',
-      otp: '9371',
-    ),
-    const AppointmentModel(
-      salonName: 'CD Hair Salon',
-      location: 'Near Cinema Hall',
-      date: '5 Oct 2022',
-      time: '11:00AM to 11:30AM',
-      status: 'completed',
-      otp: '4829',
-    ),
-    const AppointmentModel(
-      salonName: 'Affinity Salon',
-      location: 'Near Town Hall',
-      date: '1 Oct 2022',
-      time: '3:00PM to 3:30PM',
-      status: 'cancelled',
-      otp: '1234',
-    ),
-  ];
-
   final Map<String, bool> _otpVisible = {};
 
   @override
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 3, vsync: this);
+    // Pull the live rows (the provider is also refreshed after a payment).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<BookingProvider>().fetchUserBookings();
+    });
   }
 
   @override
@@ -78,8 +59,61 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
     super.dispose();
   }
 
-  List<AppointmentModel> _filtered(String status) =>
-      _appointments.where((a) => a.status == status).toList();
+  static String _two(int v) => v.toString().padLeft(2, '0');
+
+  static String _formatDate(DateTime d) =>
+      '${_two(d.day)} ${_month(d.month)} ${d.year}';
+
+  static String _month(int m) => const [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ][m - 1];
+
+  static String _formatTime(String hhmmss) {
+    final parts = hhmmss.split(':');
+    final h = int.tryParse(parts.first) ?? 0;
+    final m = parts.length > 1 ? parts[1] : '00';
+    final suffix = h >= 12 ? 'PM' : 'AM';
+    final h12 = h % 12 == 0 ? 12 : h % 12;
+    return '$h12:$m $suffix';
+  }
+
+  static AppointmentModel _toAppointment(BookingModel b) {
+    String status;
+    if (b.isCancelled) {
+      status = 'cancelled';
+    } else if (b.isCompleted || !b.bookingDateTime.isAfter(DateTime.now())) {
+      status = 'completed';
+    } else {
+      status = 'ongoing';
+    }
+
+    return AppointmentModel(
+      id: b.id,
+      salonName: b.salonName ?? 'Salon',
+      location: b.salonLocation ?? '',
+      date: _formatDate(b.bookingDate),
+      time: '${_formatTime(b.startTime)} to ${_formatTime(b.endTime)}',
+      status: status,
+      otp: b.otpCode ?? '------',
+    );
+  }
+
+  List<AppointmentModel> _filtered(
+    List<AppointmentModel> all,
+    String status,
+  ) =>
+      all.where((a) => a.status == status).toList();
 
   @override
   Widget build(BuildContext context) {
@@ -88,6 +122,9 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
     final kPurpleAccent = colors.purpleAccent;
     final kWhite = colors.white;
     final kTextMuted = colors.textMuted;
+
+    final bookings = context.watch<BookingProvider>().bookings;
+    final appointments = bookings.map(_toAppointment).toList();
 
     return Scaffold(
       backgroundColor: kPurpleDark,
@@ -162,9 +199,9 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
               child: TabBarView(
                 controller: _tabCtrl,
                 children: [
-                  _buildList('ongoing'),
-                  _buildList('completed'),
-                  _buildList('cancelled'),
+                  _buildList(appointments, 'ongoing'),
+                  _buildList(appointments, 'completed'),
+                  _buildList(appointments, 'cancelled'),
                 ],
               ),
             ),
@@ -174,14 +211,12 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
     );
   }
 
-  Widget _buildList(String status) {
-    final list = _filtered(status);
+  Widget _buildList(List<AppointmentModel> all, String status) {
+    final list = _filtered(all, status);
 
-    final kPurpleMid = colors.purpleMid;
     final kPurpleLight = colors.purpleLight;
     final kTextMuted = colors.textMuted;
     final kWhite = colors.white;
-    final kPurpleAccent = colors.purpleAccent;
 
     if (list.isEmpty) {
       return Center(
@@ -208,13 +243,13 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
       itemCount: list.length,
       itemBuilder: (ctx, i) {
         final apt = list[i];
-        final showOtp = _otpVisible[apt.otp] ?? false;
+        final showOtp = _otpVisible[apt.id] ?? false;
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Container(
             decoration: BoxDecoration(
-              color: kPurpleMid,
+              color: colors.purpleMid,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: kPurpleLight.withOpacity(0.2),
@@ -244,21 +279,23 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Text(
-                            ' | ',
-                            style: TextStyle(color: kTextMuted, fontSize: 13),
-                          ),
-                          Flexible(
-                            child: Text(
-                              apt.location,
-                              style: TextStyle(
-                                color: kTextMuted,
-                                fontSize: 12,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                          if (apt.location.isNotEmpty) ...[
+                            Text(
+                              ' | ',
+                              style: TextStyle(color: kTextMuted, fontSize: 13),
                             ),
-                          ),
+                            Flexible(
+                              child: Text(
+                                apt.location,
+                                style: TextStyle(
+                                  color: kTextMuted,
+                                  fontSize: 12,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -313,9 +350,9 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () =>
-                                setState(() => _otpVisible[apt.otp] = !showOtp),
+                                setState(() => _otpVisible[apt.id] = !showOtp),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: kPurpleAccent,
+                              backgroundColor: colors.purpleAccent,
                               foregroundColor: kWhite,
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               shape: RoundedRectangleBorder(
@@ -374,33 +411,6 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                     duration: const Duration(milliseconds: 250),
                   ),
                 ],
-
-                if (status == 'completed')
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kPurpleAccent.withOpacity(0.2),
-                          foregroundColor: kPurpleLight,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text(
-                          'Rate & Review',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
@@ -418,7 +428,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
+      builder: (sheetContext) => Container(
         decoration: BoxDecoration(
           color: kPurpleMid,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -476,7 +486,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.pop(sheetContext),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: kPurpleLight.withOpacity(0.3)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -493,11 +503,14 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      setState(
-                        () => _appointments.firstWhere((a) => a.otp == apt.otp),
-                        // In real app, update status via provider
+                    onPressed: () async {
+                      Navigator.pop(sheetContext);
+                      final messenger = ScaffoldMessenger.of(context);
+                      await context
+                          .read<BookingProvider>()
+                          .cancelBooking(apt.id);
+                      messenger.showSnackBar(
+                        const SnackBar(content: Text('Appointment cancelled.')),
                       );
                     },
                     style: ElevatedButton.styleFrom(

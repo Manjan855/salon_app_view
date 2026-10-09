@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:salon_app_view/features/salon_detail/reviews_screen.dart';
 import 'package:salon_app_view/core/theme/app_theme.dart';
 import 'package:salon_app_view/repositories/salon_repositories.dart';
 import 'package:salon_app_view/shared/models/service_model.dart';
+import 'package:salon_app_view/shared/providers/auth_provider.dart';
+import 'package:salon_app_view/shared/providers/favourite_provider.dart';
 
 const kGreen = Color(0xFF4CAF50);
 const kGold = Color(0xFFFFD700);
@@ -74,6 +77,11 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
     } else {
       _services = _mockServices();
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final userId = context.read<AuthProvider>().user?.id;
+      context.read<FavouriteProvider>().ensureLoaded(userId: userId);
+    });
   }
 
   Future<void> _loadServices() async {
@@ -225,9 +233,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
   // ── Header with image + back ──────────────────────────────
   Widget _buildHeader(BuildContext context, String name, String location) {
     final kPurpleDark = colors.purpleDark;
-    final kPurpleMid = colors.purpleMid;
     final kPurpleAccent = colors.purpleAccent;
-    final kPurpleLight = colors.purpleLight;
     final kWhite = colors.white;
 
     return Stack(
@@ -272,6 +278,55 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
             ),
           ),
         ),
+        // Favourite button
+        if (_salonId != null)
+          Positioned(
+            top: 12,
+            right: 16,
+            child: Builder(
+              builder: (context) {
+                final isFav = context
+                    .watch<FavouriteProvider>()
+                    .isFavourite(_salonId);
+                return GestureDetector(
+                  onTap: () async {
+                    try {
+                      await context
+                          .read<FavouriteProvider>()
+                          .toggle(_salonId!);
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            e
+                                .toString()
+                                .replaceAll('Exception:', '')
+                                .trim(),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: kPurpleDark.withValues(alpha: 0.7),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isFav
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      color: isFav ? Colors.redAccent : kWhite,
+                      size: 20,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         // Salon name overlay at bottom of image
         Positioned(
           bottom: 0,
