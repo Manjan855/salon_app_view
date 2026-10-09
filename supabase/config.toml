@@ -1,0 +1,11 @@
+# Minimal Supabase CLI config for this project.
+#
+# `supabase functions deploy` reads the [functions.*] blocks from here.
+# generate with `supabase init` if you want the full template.
+project_id = "zhnfhkahspsqbfjetwlt"
+
+[functions.payments]
+# eSewa and Khalti redirect the *browser* to /callback/… with no user JWT, so
+# the platform-level JWT check has to be off. /initiate (the only route that
+# needs a user) verifies the caller's token itself against Supabase Auth.
+verify_jwt = false

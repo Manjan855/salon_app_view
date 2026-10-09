@@ -45,4 +45,17 @@ void main() {
         reason: 'CFBundleURLSchemes must list "${uri.scheme}" to match '
             'AppEnv.authRedirectUrl');
   });
+
+  test('paymentResultUrl is declared on both platforms', () {
+    final pay = Uri.parse(AppEnv.paymentResultUrl);
+    expect(pay.scheme, uri.scheme,
+        reason: 'auth and payment deep links must share one scheme');
+    expect(pay.query, isEmpty,
+        reason: 'no query parameters belong in the deep-link base URL');
+    expect(manifest, contains('android:host="${pay.host}"'),
+        reason: 'AndroidManifest must route ${AppEnv.paymentResultUrl} '
+            'back to the app after eSewa / Khalti checkout');
+    expect(plist, contains('<string>${pay.scheme}</string>'),
+        reason: 'Info.plist CFBundleURLSchemes must include the payment scheme');
+  });
 }

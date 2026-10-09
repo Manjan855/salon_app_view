@@ -1,4 +1,4 @@
 {
   "SUPABASE_URL": "https://YOUR-PROJECT-REF.supabase.co",
-  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_YOUR-PUBLISHABLE-KEY"
+  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_YOUR_PUBLISHABLE_KEY"
 }

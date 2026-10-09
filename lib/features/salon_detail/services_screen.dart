@@ -1,71 +1,138 @@
 import 'package:flutter/material.dart';
 import 'package:salon_app_view/features/salon_detail/reviews_screen.dart';
 import 'package:salon_app_view/core/theme/app_theme.dart';
+import 'package:salon_app_view/repositories/salon_repositories.dart';
+import 'package:salon_app_view/shared/models/service_model.dart';
 
 const kGreen = Color(0xFF4CAF50);
 const kGold = Color(0xFFFFD700);
 
 // ─── Service Model ────────────────────────────────────────
 class ServiceItem {
+  /// `public.services.id` when this row came from the backend.
+  final String? id;
   final String name;
   final double originalPrice;
   final double discountedPrice;
+  final int durationMinutes;
   final bool freeCancellation;
   bool added;
 
   ServiceItem({
+    this.id,
     required this.name,
     required this.originalPrice,
     required this.discountedPrice,
+    this.durationMinutes = 30,
     this.freeCancellation = true,
     this.added = false,
   });
+
+  factory ServiceItem.fromService(ServiceModel s) => ServiceItem(
+        id: s.id,
+        name: s.name,
+        originalPrice: s.price,
+        discountedPrice: s.price,
+        durationMinutes: s.durationMinutes,
+      );
+
+  bool get hasDiscount => originalPrice > discountedPrice;
 }
 
 // ─── Services Screen ──────────────────────────────────────
 class SalonServicesScreen extends StatefulWidget {
-  final dynamic salon; // accepts SalonModel or null for standalone use
-  const SalonServicesScreen({super.key, this.salon});
+  /// Accepts the shared `SalonModel` (has `id`) or the UI-only model from
+  /// `salon_info.dart` (also carries `id`). `salonId` overrides either.
+  final dynamic salon;
+  final String? salonId;
+
+  const SalonServicesScreen({super.key, this.salon, this.salonId});
 
   @override
   State<SalonServicesScreen> createState() => _SalonServicesScreenState();
 }
 
 class _SalonServicesScreenState extends State<SalonServicesScreen> {
-  final List<ServiceItem> _services = [
-    ServiceItem(name: 'Men: Haircut', originalPrice: 220, discountedPrice: 150),
-    ServiceItem(
-      name: 'Men: Haircut+Hair Wash\n+Beard Styling',
-      originalPrice: 450,
-      discountedPrice: 350,
-    ),
-    ServiceItem(
-      name: 'Women: Haircut+Hair Wash\n+Blow-Dry',
-      originalPrice: 700,
-      discountedPrice: 580,
-    ),
-    ServiceItem(
-      name: 'Women: Threading\n(Eyebrows)',
-      originalPrice: 120,
-      discountedPrice: 80,
-    ),
-    ServiceItem(
-      name: 'Men: Beard Trim',
-      originalPrice: 150,
-      discountedPrice: 100,
-    ),
-    ServiceItem(
-      name: 'Women: Facial\n(Basic)',
-      originalPrice: 800,
-      discountedPrice: 620,
-    ),
-  ];
+  final SalonRepository _repo = SalonRepository();
+
+  List<ServiceItem> _services = [];
+  bool _loading = false;
+  String? _error;
 
   AppThemeColors get colors => AppThemeColors.of(context);
 
+  String? get _salonId => widget.salonId ?? widget.salon?.id as String?;
+  String get _salonName => widget.salon?.name as String? ?? 'Salon';
+  String get _salonLocation => widget.salon?.location as String? ?? '';
+  String? get _salonImage => widget.salon?.image as String?;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_salonId != null) {
+      _loadServices();
+    } else {
+      _services = _mockServices();
+    }
+  }
+
+  Future<void> _loadServices() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final models = await _repo.getServicesBySalon(_salonId!);
+      if (!mounted) return;
+      setState(() {
+        _services = models.map(ServiceItem.fromService).toList();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString().replaceAll('Exception:', '').trim());
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  static List<ServiceItem> _mockServices() => [
+        ServiceItem(
+          name: 'Men: Haircut',
+          originalPrice: 220,
+          discountedPrice: 150,
+        ),
+        ServiceItem(
+          name: 'Men: Haircut+Hair Wash\n+Beard Styling',
+          originalPrice: 450,
+          discountedPrice: 350,
+        ),
+        ServiceItem(
+          name: 'Women: Haircut+Hair Wash\n+Blow-Dry',
+          originalPrice: 700,
+          discountedPrice: 580,
+        ),
+        ServiceItem(
+          name: 'Women: Threading\n(Eyebrows)',
+          originalPrice: 120,
+          discountedPrice: 80,
+        ),
+        ServiceItem(
+          name: 'Men: Beard Trim',
+          originalPrice: 150,
+          discountedPrice: 100,
+        ),
+        ServiceItem(
+          name: 'Women: Facial\n(Basic)',
+          originalPrice: 800,
+          discountedPrice: 620,
+        ),
+      ];
+
   String get _totalTime {
-    final count = _services.where((s) => s.added).length;
-    return '${count * 30} mins';
+    final mins = _services
+        .where((s) => s.added)
+        .fold<int>(0, (sum, s) => sum + s.durationMinutes);
+    return '$mins mins';
   }
 
   double get _totalPrice => _services
@@ -78,40 +145,77 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
   Widget build(BuildContext context) {
     final kPurpleDark = colors.purpleDark;
 
-    final salonName = widget.salon?.name ?? 'Prince Hair Salon';
-    final salonLocation = widget.salon?.location ?? 'Near Town Hall';
-
     return Scaffold(
       backgroundColor: kPurpleDark,
       body: SafeArea(
         child: Column(
           children: [
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(context, salonName, salonLocation),
-                    _buildInfoRow(),
-                    const SizedBox(height: 4),
-                    _buildDivider(),
-                    ..._services.asMap().entries.map(
-                      (e) => _ServiceTile(
-                        item: e.value,
-                        isFirst: e.key == 0,
-                        onToggle: () =>
-                            setState(() => e.value.added = !e.value.added),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+            Expanded(child: _buildBody()),
+            if (!_loading && _services.isNotEmpty) _buildBottomCTA(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return _buildError();
+    }
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(context, _salonName, _salonLocation),
+          _buildInfoRow(),
+          const SizedBox(height: 4),
+          _buildDivider(),
+          if (_services.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Center(
+                child: Text(
+                  'No services listed for this salon yet.',
+                  style: TextStyle(color: colors.textMuted, fontSize: 13),
                 ),
               ),
             ),
+          ..._services.asMap().entries.map(
+                (e) => _ServiceTile(
+                  item: e.value,
+                  isFirst: e.key == 0,
+                  onToggle: () => setState(() => e.value.added = !e.value.added),
+                ),
+              ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
 
-            // ── Bottom CTA ──────────────────────────────────
-            _buildBottomCTA(context),
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off_rounded, color: colors.textMuted, size: 40),
+            const SizedBox(height: 12),
+            Text(
+              _error ?? 'Could not load services.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: colors.textMuted, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: _loadServices,
+              child: const Text('Retry'),
+            ),
           ],
         ),
       ),
@@ -125,7 +229,6 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
     final kPurpleAccent = colors.purpleAccent;
     final kPurpleLight = colors.purpleLight;
     final kWhite = colors.white;
-    final kTextMuted = colors.textMuted;
 
     return Stack(
       children: [
@@ -136,7 +239,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
             bottomRight: Radius.circular(0),
           ),
           child: Image.network(
-            widget.salon?.image ??
+            _salonImage ??
                 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=600',
             width: double.infinity,
             height: 220,
@@ -220,39 +323,6 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                             ),
                           ),
                         ],
-                      ),
-                    ],
-                  ),
-                ),
-                // Distance badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: kPurpleMid,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: kPurpleLight.withValues(alpha: 0.3),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.navigation_rounded,
-                        color: kPurpleLight,
-                        size: 12,
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        '1.5km',
-                        style: TextStyle(
-                          color: kPurpleLight,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
                       ),
                     ],
                   ),
@@ -350,9 +420,6 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
 
   // ── Bottom CTA ────────────────────────────────────────────
   Widget _buildBottomCTA(BuildContext context) {
-    final salonName = widget.salon?.name ?? 'Prince Hair Salon';
-    final salonLocation = widget.salon?.location ?? 'Near Town Hall';
-
     final kPurpleDark = colors.purpleDark;
     final kPurpleMid = colors.purpleMid;
     final kPurpleAccent = colors.purpleAccent;
@@ -388,7 +455,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                         style: TextStyle(color: kTextMuted, fontSize: 12),
                       ),
                       Text(
-                        '₹${_totalPrice.toStringAsFixed(0)}',
+                        'Rs ${_totalPrice.toStringAsFixed(0)}',
                         style: TextStyle(
                           color: kWhite,
                           fontSize: 16,
@@ -405,9 +472,11 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                       final selectedItems = _services
                           .where((s) => s.added)
                           .map((s) => OrderedService(
+                                serviceId: s.id,
                                 name: s.name,
                                 originalPrice: s.originalPrice,
                                 discountedPrice: s.discountedPrice,
+                                durationMinutes: s.durationMinutes,
                               ))
                           .toList();
 
@@ -416,8 +485,9 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                         MaterialPageRoute(
                           builder: (_) => ReviewOrderScreen(
                             services: selectedItems,
-                            salonName: salonName,
-                            salonLocation: salonLocation,
+                            salonId: _salonId,
+                            salonName: _salonName,
+                            salonLocation: _salonLocation,
                           ),
                         ),
                       );
@@ -499,7 +569,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        'Total Time : 30 mins',
+                        'Total Time : 0 mins',
                         style: TextStyle(fontSize: 10, color: kTextMuted),
                       ),
                     ),
@@ -526,8 +596,6 @@ class _ServiceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppThemeColors.of(context);
-    final kPurpleDark = colors.purpleDark;
-    final kPurpleMid = colors.purpleMid;
     final kPurpleAccent = colors.purpleAccent;
     final kPurpleLight = colors.purpleLight;
     final kWhite = colors.white;
@@ -581,19 +649,20 @@ class _ServiceTile extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // Original price (strikethrough)
-                  Text(
-                    '₹${item.originalPrice.toInt()}',
-                    style: TextStyle(
-                      color: kTextMuted,
-                      fontSize: 12,
-                      decoration: TextDecoration.lineThrough,
-                      decorationColor: kTextMuted,
+                  // Original price (strikethrough) — only when discounted.
+                  if (item.hasDiscount)
+                    Text(
+                      'Rs ${item.originalPrice.toInt()}',
+                      style: TextStyle(
+                        color: kTextMuted,
+                        fontSize: 12,
+                        decoration: TextDecoration.lineThrough,
+                        decorationColor: kTextMuted,
+                      ),
                     ),
-                  ),
-                  // Discounted price
+                  // Price
                   Text(
-                    '₹${item.discountedPrice.toInt()}',
+                    'Rs ${item.discountedPrice.toInt()}',
                     style: TextStyle(
                       color: kWhite,
                       fontSize: 15,

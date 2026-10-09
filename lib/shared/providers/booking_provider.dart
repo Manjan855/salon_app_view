@@ -62,7 +62,70 @@ class BookingProvider with ChangeNotifier {
     }
   }
 
-  // 2. Step One: Stage a pending booking inside local app memory
+  // 2. Live booking write: creates the booking row plus its service line
+  //    items in one call and returns the saved booking (with its id).
+  //    Used by the services -> slots -> booking funnel.
+  Future<BookingModel?> createBooking({
+    required String salonId,
+    String? staffId,
+    required DateTime date,
+    required DateTime start,
+    required DateTime end,
+    required double totalPrice,
+    required List<BookingServiceLine> services,
+    String? notes,
+  }) async {
+    _clearError();
+
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+    if (currentUserId == null) {
+      _error = 'Please sign in to book an appointment.';
+      notifyListeners();
+      return null;
+    }
+
+    _setLoading(true);
+    try {
+      final booking = BookingModel.staged(
+        userId: currentUserId,
+        salonId: salonId,
+        staffId: staffId,
+        date: date,
+        start: start,
+        end: end,
+        totalPrice: totalPrice,
+        notes: notes,
+      );
+
+      final id = await _bookingRepo.createBooking(booking);
+      await _bookingRepo.addBookingServices(id, services);
+
+      // Refresh the cache so the appointment list sees the new row.
+      await fetchUserBookings();
+
+      return getBookingById(id) ??
+          BookingModel(
+            id: id,
+            userId: booking.userId,
+            salonId: booking.salonId,
+            staffId: booking.staffId,
+            bookingDate: booking.bookingDate,
+            startTime: booking.startTime,
+            endTime: booking.endTime,
+            totalPrice: booking.totalPrice,
+            status: booking.status,
+            paymentStatus: booking.paymentStatus,
+            notes: booking.notes,
+          );
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception:', '').trim();
+      return null;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // 3. Step One: Stage a pending booking inside local app memory
   void stageBooking({
     required String salonId,
     String? staffId,

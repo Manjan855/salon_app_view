@@ -175,6 +175,53 @@ Coupons: `NEPAL10`, `FIRST20`, `FESTIVE25`, `WELCOME50`.
 Salon/service images point at `picsum.photos` placeholders keyed by salon name.
 Replace with real uploads to the `salons` bucket before launch.
 
+## Payments Edge Function (`supabase/functions/payments`)
+
+`payments/index.ts` is the only code allowed to move money. It implements the
+whole Nepal checkout handshake and re-verifies every transaction against the
+provider's own API before flipping a status:
+
+| Route | Called by | Purpose |
+|---|---|---|
+| `POST /initiate` | the app (user JWT) | validates booking ownership, creates a `pending` payment, returns a `checkout_url` |
+| `GET /checkout?token=…` | the browser | eSewa: self-submitting form POST · Khalti: 302 to `payment_url` |
+| `GET /callback/esewa` | eSewa | verifies HMAC, then calls eSewa's status API |
+| `GET/POST /callback/khalti` | Khalti | calls Khalti's lookup API |
+
+The amount is always read from `bookings.total_price` server-side, and the app
+never writes `payments.status` — it only asks for a checkout. After verifying,
+the function marks `payments.status = 'paid'` and `bookings.payment_status =
+'paid'`, then 302s the browser to `salonappview://payment-result?…`, which the
+app-links listener in `lib/run_app.dart` picks up.
+
+### One-time setup
+
+1. **Create a secret key** — Dashboard → Project Settings → API Keys →
+   *Publishable and secret keys* → **Create new secret key** (`sb_secret_…`).
+   (Required: the legacy `service_role` JWT is disabled on this project, so the
+   auto-injected `SUPABASE_SERVICE_ROLE_KEY` no longer works.)
+2. **Set the function secrets** (Dashboard → Edge Functions → Secrets, or CLI):
+   ```sh
+   supabase secrets set SB_SECRET_KEY=sb_secret_… \
+     APP_WEBSITE_URL=https://your-site.example \
+     ESEWA_PRODUCT_CODE=EPAYTEST \
+     ESEWA_SECRET_KEY=8gBm/:&EnhH.1/q \
+     ESEWA_FORM_URL=https://rc-epay.esewa.com.np/api/epay/main/v2/form \
+     ESEWA_STATUS_URL=https://rc.esewa.com.np/api/epay/transaction/status/ \
+     KHALTI_SECRET_KEY=live_secret_key_…
+   ```
+3. **Deploy** (config.toml already sets `verify_jwt = false` so the provider
+   callbacks work; `/initiate` verifies the user JWT itself):
+   ```sh
+   supabase functions deploy payments --no-verify-jwt
+   ```
+   No CLI? Paste `index.ts` into the dashboard's Edge Functions editor and set
+   the same secrets there.
+
+Production switch = replace the three `ESEWA_*` URL/code values and
+`KHALTI_BASE_URL` (`https://khalti.com/api/v2`) with the live merchant values.
+eSewa sandbox test wallet: id `9711111111` / password `Nepal@123` / OTP `123456`.
+
 ## Post-launch checklist for this layer
 
 - [x] Replace hardcoded Supabase URL + anon key in `lib/main.dart` with
@@ -201,13 +248,28 @@ Replace with real uploads to the `salons` bucket before launch.
       does not use this link; the scheme covers the browser flows — OAuth
       fallback, magic link, password reset, confirmation link.
       `test/deep_link_test.dart` fails if the three declarations drift apart.
-- [ ] **Add `salonappview://auth-callback` to the redirect allow list** —
+- [x] **Add `salonappview://auth-callback` to the redirect allow list** —
       Authentication → URL Configuration → Redirect URLs. Supabase rejects
       any redirect that is not listed, so the link above only starts working
-      after this dashboard step (same hands-on step as the key flip)
+      after this dashboard step (same hands-on step as the key flip).
+      **Done:** saved in the Supabase dashboard.
 - [ ] Set a real Google `serverClientId` for production — Android also needs
       that value as `defaultWebClientId`, iOS needs `GIDClientID` plus the
       client ID's reversed form (`com.googleusercontent.apps.<CLIENT_ID>`)
       as a `CFBundleURLSchemes` entry
-- [ ] Wire eSewa / Khalti merchant credentials through an edge function so
-      `payments.status` can never be flipped by a client
+- [x] Wire eSewa / Khalti merchant credentials through an edge function so
+      `payments.status` can never be flipped by a client — **done:**
+      `supabase/functions/payments/index.ts` (see *Payments Edge Function*
+      above). The app now only requests a checkout; the function re-verifies
+      each transaction with the provider before writing `paid`.
+- [ ] **Create the `sb_secret_…` key and set the function secrets**, then
+      deploy `payments` (see *One-time setup* above). Until this is done the
+      function is not reachable — `/initiate` returns 404.
+- [ ] **Rebuild the booking funnel on real data** — the services → slots →
+      booking → appointment screens are still hardcoded mock data, so no row is
+      ever inserted into `bookings` and the app has no `bookingId` to pass to
+      `PaymentOptionsScreen`. Payments can only be exercised end-to-end once a
+      real booking exists.
+- [ ] **Drop the archived legacy schema** after launch:
+      `drop schema archive cascade;` — removes the old hand-made tables for
+      good (nothing is currently lost by leaving it in place).

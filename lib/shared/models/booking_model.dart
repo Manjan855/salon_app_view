@@ -29,10 +29,20 @@ class BookingModel {
   final String? cancelledReason;
   final DateTime? createdAt;
 
-  /// Denormalised display names — present only when the repository asks for
-  /// `*, salons(name), staff(name)`. Null on a plain select.
+  /// Denormalised display fields — present only when the repository asks for
+  /// `*, salon:salons(name, address, city), staff:staff(name)`. Null on a
+  /// plain select.
   final String? salonName;
+  final String? salonAddress;
+  final String? salonCity;
   final String? staffName;
+
+  /// Salon location for display, falling back across the embedded columns.
+  String? get salonLocation {
+    if (salonAddress != null && salonAddress!.isNotEmpty) return salonAddress;
+    if (salonCity != null && salonCity!.isNotEmpty) return salonCity;
+    return null;
+  }
 
   const BookingModel({
     required this.id,
@@ -51,6 +61,8 @@ class BookingModel {
     this.cancelledReason,
     this.createdAt,
     this.salonName,
+    this.salonAddress,
+    this.salonCity,
     this.staffName,
   });
 
@@ -145,6 +157,8 @@ class BookingModel {
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
       salonName: salonRel is Map ? salonRel['name'] as String? : null,
+      salonAddress: salonRel is Map ? salonRel['address'] as String? : null,
+      salonCity: salonRel is Map ? salonRel['city'] as String? : null,
       staffName: staffRel is Map ? staffRel['name'] as String? : null,
     );
   }
@@ -163,5 +177,32 @@ class BookingModel {
         'payment_status': paymentStatus,
         if (paymentProvider != null) 'payment_provider': paymentProvider,
         if (notes != null) 'notes': notes,
+      };
+}
+
+/// One `public.booking_services` line item, written right after the parent
+/// booking so the salon knows exactly which services were ordered.
+class BookingServiceLine {
+  final String? serviceId;
+  final String serviceName;
+  final double unitPrice;
+  final int quantity;
+  final int durationMinutes;
+
+  const BookingServiceLine({
+    this.serviceId,
+    required this.serviceName,
+    required this.unitPrice,
+    this.quantity = 1,
+    this.durationMinutes = 30,
+  });
+
+  Map<String, dynamic> toJson(String bookingId) => {
+        'booking_id': bookingId,
+        if (serviceId != null) 'service_id': serviceId,
+        'service_name': serviceName,
+        'unit_price': unitPrice,
+        'quantity': quantity,
+        'duration_minutes': durationMinutes,
       };
 }

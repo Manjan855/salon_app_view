@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:salon_app_view/core/theme/app_theme.dart';
 import 'package:salon_app_view/features/appointment/confirmation_screen.dart';
+import 'package:salon_app_view/shared/providers/payment_provider.dart';
 
 class PaymentOptionsScreen extends StatefulWidget {
   final String salonName;
   final String salonLocation;
   final double totalAmount;
 
+  /// The saved `public.bookings.id` this payment is for. When null (the demo
+  /// booking flow has not created a row yet) only "Pay at salon" is offered.
+  final String? bookingId;
+
   const PaymentOptionsScreen({
     super.key,
     required this.salonName,
     required this.salonLocation,
     required this.totalAmount,
+    this.bookingId,
   });
 
   @override
@@ -19,9 +26,56 @@ class PaymentOptionsScreen extends StatefulWidget {
 }
 
 class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
+  /// 'esewa' | 'khalti' | 'cash'
   String? _selectedPayment;
+  bool _paying = false;
 
   AppThemeColors get colors => AppThemeColors.of(context);
+
+  bool get _isOnline =>
+      _selectedPayment == 'esewa' || _selectedPayment == 'khalti';
+
+  Future<void> _continue() async {
+    if (_selectedPayment == 'cash') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ConfirmationScreen(
+            salonName: widget.salonName,
+            salonLocation: widget.salonLocation,
+          ),
+        ),
+      );
+      return;
+    }
+
+    final bookingId = widget.bookingId;
+    if (bookingId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Save the appointment first — online payment needs a booking.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _paying = true);
+    final payments = context.read<PaymentProvider>();
+    final started = await payments.startCheckout(
+      bookingId: bookingId,
+      provider: _selectedPayment!,
+    );
+    if (!mounted) return;
+    setState(() => _paying = false);
+
+    if (!started) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(payments.error ?? 'Could not start the payment.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -135,7 +189,7 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                           ],
                         ),
                         Text(
-                          '₹${widget.totalAmount.toInt()}',
+                          'Rs ${widget.totalAmount.toInt()}',
                           style: TextStyle(
                             color: kWhite,
                             fontSize: 22,
@@ -147,29 +201,36 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
 
                     const SizedBox(height: 24),
 
-                    // ── Pre-payment ───────────────────────
+                    // ── Online wallets ────────────────────
                     _PaymentTile(
-                      label: 'Pre-payment',
-                      methodLabel: 'UPI/',
+                      label: 'eSewa',
+                      methodLabel: 'Wallet',
                       methodIcons: const [
                         Icons.account_balance_wallet_outlined,
                       ],
-                      isSelected: _selectedPayment == 'pre',
-                      onTap: () => setState(() => _selectedPayment = 'pre'),
+                      isSelected: _selectedPayment == 'esewa',
+                      onTap: () => setState(() => _selectedPayment = 'esewa'),
                     ),
 
                     const SizedBox(height: 12),
 
-                    // ── Post-payment ──────────────────────
                     _PaymentTile(
-                      label: 'Post-payment',
-                      methodLabel: 'Cash/ UPI/',
-                      methodIcons: const [
-                        Icons.payments_outlined,
-                        Icons.account_balance_wallet_outlined,
-                      ],
-                      isSelected: _selectedPayment == 'post',
-                      onTap: () => setState(() => _selectedPayment = 'post'),
+                      label: 'Khalti',
+                      methodLabel: 'Wallet',
+                      methodIcons: const [Icons.payments_outlined],
+                      isSelected: _selectedPayment == 'khalti',
+                      onTap: () => setState(() => _selectedPayment = 'khalti'),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // ── Pay at the salon ──────────────────
+                    _PaymentTile(
+                      label: 'Pay at salon',
+                      methodLabel: 'Cash',
+                      methodIcons: const [Icons.storefront_outlined],
+                      isSelected: _selectedPayment == 'cash',
+                      onTap: () => setState(() => _selectedPayment = 'cash'),
                     ),
                   ],
                 ),
@@ -187,21 +248,11 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _selectedPayment == null
+                  onPressed: (_selectedPayment == null || _paying)
                       ? null
-                      : () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ConfirmationScreen(
-                                salonName: widget.salonName,
-                                salonLocation: widget.salonLocation,
-                              ),
-                            ),
-                          );
-                        },
+                      : _continue,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _selectedPayment == null
+                    backgroundColor: (_selectedPayment == null || _paying)
                         ? kPurpleAccent.withOpacity(0.4)
                         : kPurpleAccent,
                     foregroundColor: kWhite,
@@ -211,10 +262,22 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Continue',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                  ),
+                  child: _paying
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          _isOnline ? 'Pay now' : 'Continue',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                          ),
+                        ),
                 ),
               ),
             ),

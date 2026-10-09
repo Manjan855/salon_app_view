@@ -51,6 +51,11 @@ dependencies:
   package_info_plus: ^10.1.0
   google_sign_in: ^7.2.0  # <-- Make sure this line looks exactly like this!
   supabase_flutter: ^2.6.0
+
+  # Opens the eSewa / Khalti checkout in the system browser and routes the
+  # `salonappview://payment-result` callback back into the app.
+  url_launcher: ^6.3.2
+  app_links: ^7.1.2
   
 dev_dependencies:
   flutter_test:

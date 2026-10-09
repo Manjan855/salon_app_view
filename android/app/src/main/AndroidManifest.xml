@@ -36,6 +36,16 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="salonappview" android:host="auth-callback"/>
             </intent-filter>
+            <!-- eSewa / Khalti return link: the payments Edge Function 302s the
+                 browser to salonappview://payment-result?... after verifying the
+                 transaction, and Android routes it back to this activity. Must
+                 match AppEnv.paymentResultUrl. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="salonappview" android:host="payment-result"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

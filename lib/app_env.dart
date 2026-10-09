@@ -32,6 +32,16 @@ class AppEnv {
   /// `test/deep_link_test.dart` fails if the declarations drift apart.
   static const String authRedirectUrl = 'salonappview://auth-callback';
 
+  /// Deep link the payments Edge Function bounces the browser back to after an
+  /// eSewa / Khalti round-trip. Its `?status=paid|failed&provider=…&booking_id=…`
+  /// params are read by the app-links listener in `run_app.dart`.
+  ///
+  /// Like [authRedirectUrl], the scheme must be declared in the Android
+  /// manifest and iOS Info.plist. The host does NOT need to be on Supabase's
+  /// allow list — providers redirect to the *function* callback, which then
+  /// 302s to this link.
+  static const String paymentResultUrl = 'salonappview://payment-result';
+
   /// True once both values were injected at build/run time.
   static const bool isConfigured =
       supabaseUrl != '' && supabasePublishableKey != '';
