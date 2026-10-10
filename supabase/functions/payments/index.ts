@@ -17,14 +17,17 @@
 //   • Every provider callback is re-verified against the provider's own
 //     status/lookup API before the booking is marked paid.
 //
-// Required function secrets (Dashboard → Edge Functions → Secrets, or
-// `supabase secrets set …`, or a `supabase/functions/.env` locally):
+// Admin access: the function bypasses RLS to update `payments` / `bookings`.
+// Supabase automatically injects `SUPABASE_SECRET_KEYS` (a JSON map of the
+// project's new-style secret keys), so no key has to be copied by hand —
+// deploying the function is enough. Set `SB_SECRET_KEY` only to override
+// which key is used (handy for local runs).
 //
-//   SB_SECRET_KEY         sb_secret_…      ← new-style secret key. REQUIRED
-//                                            because legacy service_role keys
-//                                            are disabled on this project.
+// Required function secrets (Dashboard → Edge Functions → Secrets):
 //   APP_WEBSITE_URL       https://…        ← Khalti `website_url` (any valid URL)
 //   APP_PAYMENT_REDIRECT_URL               ← default salonappview://payment-result
+//
+// Optional — override the sandbox defaults below:
 //
 // eSewa (sandbox defaults shown; override for production):
 //   ESEWA_PRODUCT_CODE    EPAYTEST
@@ -36,12 +39,11 @@
 //   KHALTI_SECRET_KEY     live_secret_key_… (test-admin.khalti.com for sandbox)
 //   KHALTI_BASE_URL       https://dev.khalti.com/api/v2
 //
-// Deploy (config.toml already sets verify_jwt = false for this function;
-// callbacks cannot carry a user JWT):
+// Deploy either from the Dashboard (Edge Functions → Deploy a new function →
+// Via Editor → name it `payments` → paste this file → turn OFF JWT
+// verification) or with the CLI:
 //   supabase functions deploy payments --no-verify-jwt
-//
-// NOTE: without the Supabase CLI you can paste this file into the dashboard's
-// Edge Functions editor and deploy it there, setting the same secrets.
+// (config.toml already sets verify_jwt = false; callbacks cannot carry a JWT.)
 // =============================================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -50,10 +52,33 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 // Config
 // ---------------------------------------------------------------------------
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SERVICE_KEY =
-  Deno.env.get("SB_SECRET_KEY") ??
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-  "";
+
+/**
+ * Resolve a key that bypasses RLS. Preference order:
+ *   1. SB_SECRET_KEY              — explicit override (function secret)
+ *   2. SUPABASE_SECRET_KEYS JSON  — auto-injected by Supabase, e.g.
+ *                                   {"default":"sb_secret_…"}; no manual copy
+ *   3. SUPABASE_SERVICE_ROLE_KEY  — legacy fallback (disabled on this project)
+ */
+function resolveServiceKey(): string {
+  const explicit = Deno.env.get("SB_SECRET_KEY");
+  if (explicit) return explicit;
+
+  const bundled = Deno.env.get("SUPABASE_SECRET_KEYS");
+  if (bundled) {
+    try {
+      const parsed = JSON.parse(bundled) as Record<string, unknown>;
+      const first = parsed["default"] ?? Object.values(parsed)[0];
+      if (typeof first === "string" && first) return first;
+    } catch {
+      // malformed JSON — fall through to the legacy variable
+    }
+  }
+
+  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+}
+
+const SERVICE_KEY = resolveServiceKey();
 
 const APP_WEBSITE_URL =
   Deno.env.get("APP_WEBSITE_URL") ?? "https://salonappview.example";
@@ -596,7 +621,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   if (!SERVICE_KEY) {
     return json(
-      { error: "Payments function is missing SB_SECRET_KEY" },
+      {
+        error:
+          "Payments function has no admin key (set SB_SECRET_KEY or rely on the auto-injected SUPABASE_SECRET_KEYS)",
+      },
       503,
     );
   }

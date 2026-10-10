@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:salon_app_view/features/salon_detail/reviews_screen.dart';
 import 'package:salon_app_view/core/theme/app_theme.dart';
+import 'package:salon_app_view/features/salon_detail/salon_reviews_screen.dart';
 import 'package:salon_app_view/repositories/salon_repositories.dart';
+import 'package:salon_app_view/shared/models/salon_model.dart';
 import 'package:salon_app_view/shared/models/service_model.dart';
 import 'package:salon_app_view/shared/providers/auth_provider.dart';
 import 'package:salon_app_view/shared/providers/favourite_provider.dart';
@@ -68,6 +70,42 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
   String get _salonName => widget.salon?.name as String? ?? 'Salon';
   String get _salonLocation => widget.salon?.location as String? ?? '';
   String? get _salonImage => widget.salon?.image as String?;
+
+  /// The screen accepts either the shared `SalonModel` (has `ratingAvg`) or
+  /// the UI-only model in `salon_info.dart` (has `rating`). Read whichever is
+  /// present without hard-depending on the other type.
+  double get _ratingAvg {
+    final s = widget.salon;
+    if (s == null) return 0;
+    if (s is SalonModel) return s.ratingAvg;
+    try {
+      return (s.rating as num).toDouble();
+    } on NoSuchMethodError {
+      return 0;
+    }
+  }
+
+  int get _ratingCount {
+    final s = widget.salon;
+    if (s == null) return 0;
+    if (s is SalonModel) return s.ratingCount;
+    try {
+      return (s.ratingCount as num).toInt();
+    } on NoSuchMethodError {
+      return 0;
+    }
+  }
+
+  void _openReviews() {
+    final id = _salonId;
+    if (id == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SalonReviewsScreen(salonId: id, salonName: _salonName),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -180,6 +218,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
         children: [
           _buildHeader(context, _salonName, _salonLocation),
           _buildInfoRow(),
+          if (_salonId != null) _buildReviewsRow(),
           const SizedBox(height: 4),
           _buildDivider(),
           if (_services.isEmpty)
@@ -460,6 +499,43 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  // ── Reviews entry point ───────────────────────────────────
+  Widget _buildReviewsRow() {
+    final kPurpleAccent = colors.purpleAccent;
+    final kTextMuted = colors.textMuted;
+    final rating = _ratingAvg;
+    final count = _ratingCount;
+
+    return InkWell(
+      onTap: _openReviews,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+        child: Row(
+          children: [
+            RatingStars(rating: rating, size: 15),
+            const SizedBox(width: 8),
+            Text(
+              rating > 0
+                  ? '${rating.toStringAsFixed(1)} ($count)'
+                  : 'No ratings yet',
+              style: TextStyle(color: kTextMuted, fontSize: 12),
+            ),
+            const Spacer(),
+            Text(
+              'See all reviews',
+              style: TextStyle(
+                color: kPurpleAccent,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: kPurpleAccent, size: 18),
+          ],
+        ),
       ),
     );
   }

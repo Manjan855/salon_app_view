@@ -71,8 +71,20 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
     setState(() => _paying = false);
 
     if (!started) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(payments.error ?? 'Could not start the payment.')),
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(payments.error ?? 'Could not start the payment.'),
+          duration: const Duration(seconds: 6),
+          action: payments.notDeployed
+              ? SnackBarAction(
+                  label: 'Pay at salon',
+                  textColor: colors.purpleLight,
+                  onPressed: () => setState(() => _selectedPayment = 'cash'),
+                )
+              : null,
+        ),
       );
     }
   }
@@ -209,6 +221,7 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                         Icons.account_balance_wallet_outlined,
                       ],
                       isSelected: _selectedPayment == 'esewa',
+                      enabled: widget.bookingId != null,
                       onTap: () => setState(() => _selectedPayment = 'esewa'),
                     ),
 
@@ -219,8 +232,17 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                       methodLabel: 'Wallet',
                       methodIcons: const [Icons.payments_outlined],
                       isSelected: _selectedPayment == 'khalti',
+                      enabled: widget.bookingId != null,
                       onTap: () => setState(() => _selectedPayment = 'khalti'),
                     ),
+
+                    if (widget.bookingId == null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Save the appointment first to pay online.',
+                        style: TextStyle(color: kTextMuted, fontSize: 11),
+                      ),
+                    ],
 
                     const SizedBox(height: 12),
 
@@ -295,6 +317,7 @@ class _PaymentTile extends StatelessWidget {
     required this.methodIcons,
     required this.isSelected,
     required this.onTap,
+    this.enabled = true,
   });
 
   final String label;
@@ -302,6 +325,7 @@ class _PaymentTile extends StatelessWidget {
   final List<IconData> methodIcons;
   final bool isSelected;
   final VoidCallback onTap;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -312,15 +336,22 @@ class _PaymentTile extends StatelessWidget {
     final kWhite = colors.white;
     final kTextMuted = colors.textMuted;
 
+    final labelColor = !enabled
+        ? kTextMuted.withOpacity(0.5)
+        : isSelected
+            ? kWhite
+            : kTextMuted;
+    final mutedColor = kTextMuted.withOpacity(enabled ? 1 : 0.5);
+
     return GestureDetector(
-      onTap: onTap,
+      onTap: enabled ? onTap : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
           color: isSelected
               ? kPurpleAccent.withOpacity(0.15)
-              : kPurpleMid.withOpacity(0.5),
+              : kPurpleMid.withOpacity(enabled ? 0.5 : 0.25),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? kPurpleAccent : kPurpleLight.withOpacity(0.3),
@@ -333,7 +364,7 @@ class _PaymentTile extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? kWhite : kTextMuted,
+                color: labelColor,
                 fontSize: 14,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               ),
@@ -342,12 +373,12 @@ class _PaymentTile extends StatelessWidget {
               children: [
                 Text(
                   methodLabel,
-                  style: TextStyle(color: kTextMuted, fontSize: 13),
+                  style: TextStyle(color: mutedColor, fontSize: 13),
                 ),
                 ...methodIcons.map(
                   (ic) => Padding(
                     padding: const EdgeInsets.only(left: 4),
-                    child: Icon(ic, color: kTextMuted, size: 18),
+                    child: Icon(ic, color: mutedColor, size: 18),
                   ),
                 ),
               ],

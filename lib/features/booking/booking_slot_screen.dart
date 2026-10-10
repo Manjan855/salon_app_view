@@ -858,7 +858,14 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
     final staffId = _confirmedStaffId;
     final slot = _confirmedSlot;
     final salonId = widget.salonId;
-    if (staffId == null || slot == null || salonId == null) return;
+    if (staffId == null || slot == null || salonId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pick a stylist and time slot before confirming.'),
+        ),
+      );
+      return;
+    }
 
     setState(() => _saving = true);
 

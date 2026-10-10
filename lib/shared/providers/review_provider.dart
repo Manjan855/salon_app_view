@@ -1,153 +1,124 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
+import '../../repositories/review_repository.dart';
 import '../models/review_model.dart';
 
-class ReviewProvider extends ChangeNotifier {
+/// Holds the reviews for the salon currently on screen, plus the set of the
+/// signed-in user's already-reviewed booking ids (so "Rate your visit" can
+/// show a Reviewed state without a second round-trip per booking).
+class ReviewProvider with ChangeNotifier {
+  final ReviewRepository _repo = ReviewRepository();
+
   List<ReviewModel> _reviews = [];
+  Set<String> _reviewedBookingIds = {};
   bool _isLoading = false;
   String? _error;
-  double _averageRating = 0.0;
+  String? _loadedForSalonId;
+  String? _reviewedLoadedForUserId;
 
   List<ReviewModel> get reviews => _reviews;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  double get averageRating => _averageRating;
+  Set<String> get reviewedBookingIds => _reviewedBookingIds;
 
-  // Submit review
-  Future<bool> submitReview({
-    required String salonId,
-    required String serviceId,
-    required double rating,
-    required String comment,
-    List<String>? tags,
-  }) async {
-    _setLoading(true);
+  int get reviewCount => _reviews.length;
+
+  double get averageRating {
+    if (_reviews.isEmpty) return 0;
+    final total = _reviews.fold<int>(0, (sum, r) => sum + r.rating);
+    return total / _reviews.length;
+  }
+
+  bool isBookingReviewed(String? bookingId) =>
+      bookingId != null && _reviewedBookingIds.contains(bookingId);
+
+  /// Loads the salon's reviews; skips the network when the same salon is
+  /// already loaded unless [force] is set (used by pull-to-refresh).
+  Future<void> loadSalonReviews(String salonId, {bool force = false}) async {
+    if (!force && _loadedForSalonId == salonId) return;
+
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      _reviews = await _repo.getSalonReviews(salonId);
+      _loadedForSalonId = salonId;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception:', '').trim();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
-      final review = ReviewModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+  /// Loads once per signed-in user; re-loads if the user changes.
+  Future<void> ensureReviewedLoaded({String? userId}) async {
+    if (userId == null) {
+      _reviewedBookingIds = {};
+      _reviewedLoadedForUserId = null;
+      return;
+    }
+    if (_reviewedLoadedForUserId == userId) return;
+
+    try {
+      _reviewedBookingIds = await _repo.getReviewedBookingIds(userId);
+      _reviewedLoadedForUserId = userId;
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception:', '').trim();
+      notifyListeners();
+    }
+  }
+
+  /// Submits a review and, when the reviewed salon is on screen, prepends it
+  /// so the list updates immediately. Returns the created review (or null).
+  Future<ReviewModel?> submitReview({
+    required String salonId,
+    required String userId,
+    String? bookingId,
+    required int rating,
+    String? comment,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final created = await _repo.submitReview(
         salonId: salonId,
-        serviceId: serviceId,
-        userId: 'current_user_id',
-        userName: 'John Doe',
-        userAvatar: null,
+        userId: userId,
+        bookingId: bookingId,
         rating: rating,
         comment: comment,
-        tags: tags ?? [],
-        date: DateTime.now(),
-        helpful: 0,
       );
 
-      _reviews.insert(0, review);
-      _calculateAverageRating();
+      if (bookingId != null) {
+        _reviewedBookingIds = {..._reviewedBookingIds, bookingId};
+      }
+      if (_loadedForSalonId == salonId) {
+        _reviews = [created, ..._reviews];
+      }
+      return created;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception:', '').trim();
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
-      _setLoading(false);
+  Future<bool> deleteReview(String id) async {
+    try {
+      await _repo.deleteReview(id);
+      _reviews = _reviews.where((r) => r.id != id).toList();
       notifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString();
-      _setLoading(false);
+      _error = e.toString().replaceAll('Exception:', '').trim();
+      notifyListeners();
       return false;
     }
-  }
-
-  // Fetch reviews for salon
-  Future<void> fetchSalonReviews(String salonId) async {
-    _setLoading(true);
-
-    try {
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Sample reviews
-      _reviews = [
-        ReviewModel(
-          id: '1',
-          salonId: salonId,
-          serviceId: '1',
-          userId: 'user1',
-          userName: 'Sarah Johnson',
-          userAvatar: null,
-          rating: 5.0,
-          comment:
-              'Excellent service! The stylist was very professional and friendly.',
-          tags: ['Great Service', 'Friendly Staff'],
-          date: DateTime.now().subtract(const Duration(days: 2)),
-          helpful: 12,
-        ),
-        ReviewModel(
-          id: '2',
-          salonId: salonId,
-          serviceId: '2',
-          userId: 'user2',
-          userName: 'Michael Brown',
-          userAvatar: null,
-          rating: 4.0,
-          comment: 'Good experience overall. Will visit again.',
-          tags: ['Clean Environment', 'On Time'],
-          date: DateTime.now().subtract(const Duration(days: 5)),
-          helpful: 8,
-        ),
-        ReviewModel(
-          id: '3',
-          salonId: salonId,
-          serviceId: '1',
-          userId: 'user3',
-          userName: 'Emily Davis',
-          userAvatar: null,
-          rating: 5.0,
-          comment: 'Best salon in town! Highly recommended.',
-          tags: ['Great Service', 'Value for Money', 'Professional'],
-          date: DateTime.now().subtract(const Duration(days: 7)),
-          helpful: 25,
-        ),
-      ];
-
-      _calculateAverageRating();
-      _setLoading(false);
-      notifyListeners();
-    } catch (e) {
-      _error = e.toString();
-      _setLoading(false);
-    }
-  }
-
-  // Mark review as helpful
-  Future<void> markHelpful(String reviewId) async {
-    final index = _reviews.indexWhere((r) => r.id == reviewId);
-    if (index != -1) {
-      _reviews[index] = ReviewModel(
-        id: _reviews[index].id,
-        salonId: _reviews[index].salonId,
-        serviceId: _reviews[index].serviceId,
-        userId: _reviews[index].userId,
-        userName: _reviews[index].userName,
-        userAvatar: _reviews[index].userAvatar,
-        rating: _reviews[index].rating,
-        comment: _reviews[index].comment,
-        tags: _reviews[index].tags,
-        date: _reviews[index].date,
-        helpful: _reviews[index].helpful + 1,
-      );
-      notifyListeners();
-    }
-  }
-
-  void _calculateAverageRating() {
-    if (_reviews.isEmpty) {
-      _averageRating = 0.0;
-      return;
-    }
-
-    final total = _reviews.fold<double>(
-      0,
-      (sum, review) => sum + review.rating,
-    );
-    _averageRating = total / _reviews.length;
-  }
-
-  void _setLoading(bool value) {
-    _isLoading = value;
-    notifyListeners();
   }
 }

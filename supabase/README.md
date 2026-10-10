@@ -196,27 +196,38 @@ app-links listener in `lib/run_app.dart` picks up.
 
 ### One-time setup
 
-1. **Create a secret key** — Dashboard → Project Settings → API Keys →
-   *Publishable and secret keys* → **Create new secret key** (`sb_secret_…`).
-   (Required: the legacy `service_role` JWT is disabled on this project, so the
-   auto-injected `SUPABASE_SERVICE_ROLE_KEY` no longer works.)
-2. **Set the function secrets** (Dashboard → Edge Functions → Secrets, or CLI):
+**Short version: deploy the function from the Dashboard, set the payment
+secrets, and turn JWT verification off.** The full click-by-click runbook —
+including verification commands and a troubleshooting table — is in
+[`supabase/DEPLOY_PAYMENTS.md`](./DEPLOY_PAYMENTS.md).
+
+At a glance:
+
+1. **Deploy** — Dashboard → Edge Functions → *Deploy a new function* → *Via
+   Editor* → name it exactly `payments` → paste
+   `supabase/functions/payments/index.ts`.
+2. **Disable JWT verification** on the function (provider callbacks carry no
+   JWT). `/initiate` still validates the caller’s user token itself.
+3. **Set secrets** — Dashboard → Edge Functions → Secrets:
    ```sh
-   supabase secrets set SB_SECRET_KEY=sb_secret_… \
-     APP_WEBSITE_URL=https://your-site.example \
-     ESEWA_PRODUCT_CODE=EPAYTEST \
-     ESEWA_SECRET_KEY=8gBm/:&EnhH.1/q \
-     ESEWA_FORM_URL=https://rc-epay.esewa.com.np/api/epay/main/v2/form \
-     ESEWA_STATUS_URL=https://rc.esewa.com.np/api/epay/transaction/status/ \
-     KHALTI_SECRET_KEY=live_secret_key_…
+   APP_WEBSITE_URL=https://your-site.example
+   ESEWA_PRODUCT_CODE=EPAYTEST
+   ESEWA_SECRET_KEY=8gBm/:&EnhH.1/q
+   ESEWA_FORM_URL=https://rc-epay.esewa.com.np/api/epay/main/v2/form
+   ESEWA_STATUS_URL=https://rc.esewa.com.np/api/epay/transaction/status/
+   KHALTI_SECRET_KEY=live_secret_key_…
    ```
-3. **Deploy** (config.toml already sets `verify_jwt = false` so the provider
-   callbacks work; `/initiate` verifies the user JWT itself):
-   ```sh
-   supabase functions deploy payments --no-verify-jwt
-   ```
-   No CLI? Paste `index.ts` into the dashboard's Edge Functions editor and set
-   the same secrets there.
+   **No `sb_secret_…` copy is required** — Supabase auto-injects
+   `SUPABASE_SECRET_KEYS`, which `index.ts` reads (`resolveServiceKey()`) for
+   admin access. `SB_SECRET_KEY` still overrides it when set.
+
+CLI equivalent:
+
+```sh
+supabase link --project-ref zhnfhkahspsqbfjetwlt
+supabase functions deploy payments --no-verify-jwt
+supabase secrets set APP_WEBSITE_URL=… KHALTI_SECRET_KEY=…
+```
 
 Production switch = replace the three `ESEWA_*` URL/code values and
 `KHALTI_BASE_URL` (`https://khalti.com/api/v2`) with the live merchant values.
@@ -262,9 +273,12 @@ eSewa sandbox test wallet: id `9711111111` / password `Nepal@123` / OTP `123456`
       `supabase/functions/payments/index.ts` (see *Payments Edge Function*
       above). The app now only requests a checkout; the function re-verifies
       each transaction with the provider before writing `paid`.
-- [ ] **Create the `sb_secret_…` key and set the function secrets**, then
-      deploy `payments` (see *One-time setup* above). Until this is done the
-      function is not reachable — `/initiate` returns 404.
+- [ ] **Deploy the `payments` Edge Function** (no CLI needed) — follow
+      [`supabase/DEPLOY_PAYMENTS.md`](./DEPLOY_PAYMENTS.md): deploy from the
+      Dashboard, turn JWT verification **off**, and set the payment secrets.
+      Until this is done the function is not reachable — `/initiate` returns
+      404. No manual `sb_secret_…` copy is required (Supabase auto-injects
+      `SUPABASE_SECRET_KEYS`).
 - [x] **Rebuild the booking funnel on real data** — **done for the
       services → slots → booking → appointment path.** The entrance lists
       (Home "Salons near you" and Explore) now read live rows from
@@ -284,6 +298,13 @@ eSewa sandbox test wallet: id `9711111111` / password `Nepal@123` / OTP `123456`
       Profile "My promocodes" sheet read active `public.coupons` (the sample
       list is kept as an offline fallback); Explore's search and sort now filter
       the live salon list locally.
+- [x] **Wire reviews to `public.reviews`** — **done.** The salon detail screen has
+      a ratings row that opens a real reviews list (`ReviewsProvider` →
+      `public.profiles_public` for reviewer names, sanitised join); completed
+      appointments show a "Rate this salon" action that inserts a review linked
+      to the booking (RLS: must have a completed/confirmed booking at that
+      salon). The `reviews_rating_sync` trigger keeps `salons.rating_avg` /
+      `rating_count` current.
 - [ ] **Men/Women service tiles & the Gender filter** — the Home service tiles
       now jump to Explore but cannot filter by service category (there is no
       gender/category column on `salons`), and the Gender sheet is still

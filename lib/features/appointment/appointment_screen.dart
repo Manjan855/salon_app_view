@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:salon_app_view/core/theme/app_theme.dart';
+import 'package:salon_app_view/features/salon_detail/salon_reviews_screen.dart';
 import 'package:salon_app_view/shared/models/booking_model.dart';
+import 'package:salon_app_view/shared/providers/auth_provider.dart';
 import 'package:salon_app_view/shared/providers/booking_provider.dart';
+import 'package:salon_app_view/shared/providers/review_provider.dart';
 
 const kRed = Color(0xFFE53935);
 
 // ─── Appointment Model ────────────────────────────────────
 class AppointmentModel {
   final String id;
+  final String salonId;
   final String salonName;
   final String location;
   final String date;
@@ -16,14 +20,20 @@ class AppointmentModel {
   final String status; // ongoing | completed | cancelled
   final String otp;
 
+  /// RLS only accepts a review when the booking is actually `completed` or
+  /// `confirmed`; a past-but-still-`pending` visit must not offer the button.
+  final bool canReview;
+
   const AppointmentModel({
     required this.id,
+    required this.salonId,
     required this.salonName,
     required this.location,
     required this.date,
     required this.time,
     required this.status,
     required this.otp,
+    this.canReview = false,
   });
 }
 
@@ -49,7 +59,10 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
     _tabCtrl = TabController(length: 3, vsync: this);
     // Pull the live rows (the provider is also refreshed after a payment).
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<BookingProvider>().fetchUserBookings();
+      final userId = context.read<AuthProvider>().user?.id;
+      context.read<ReviewProvider>().ensureReviewedLoaded(userId: userId);
     });
   }
 
@@ -100,12 +113,14 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
 
     return AppointmentModel(
       id: b.id,
+      salonId: b.salonId,
       salonName: b.salonName ?? 'Salon',
       location: b.salonLocation ?? '',
       date: _formatDate(b.bookingDate),
       time: '${_formatTime(b.startTime)} to ${_formatTime(b.endTime)}',
       status: status,
       otp: b.otpCode ?? '------',
+      canReview: b.status == 'completed' || b.status == 'confirmed',
     );
   }
 
@@ -411,12 +426,82 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                     duration: const Duration(milliseconds: 250),
                   ),
                 ],
+                if (status == 'completed' && apt.canReview)
+                  _buildRateRow(context, apt),
               ],
             ),
           ),
         );
       },
     );
+  }
+
+  /// "Rate this salon" / "Reviewed" action for a completed appointment.
+  Widget _buildRateRow(BuildContext context, AppointmentModel apt) {
+    final reviewed = context.watch<ReviewProvider>().isBookingReviewed(apt.id);
+    final kPurpleLight = colors.purpleLight;
+    final kPurpleAccent = colors.purpleAccent;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: reviewed ? null : () => _showReviewSheet(context, apt),
+          icon: Icon(
+            reviewed ? Icons.check_circle_rounded : Icons.star_outline_rounded,
+            size: 16,
+            color: reviewed ? Colors.greenAccent : kPurpleAccent,
+          ),
+          label: Text(
+            reviewed ? 'Reviewed' : 'Rate this salon',
+            style: TextStyle(
+              color: reviewed ? Colors.greenAccent : kPurpleAccent,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: kPurpleLight.withOpacity(0.3)),
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showReviewSheet(
+    BuildContext context,
+    AppointmentModel apt,
+  ) async {
+    final userId = context.read<AuthProvider>().user?.id;
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sign in to leave a review.')),
+      );
+      return;
+    }
+
+    final submitted = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => WriteReviewSheet(
+        salonId: apt.salonId,
+        salonName: apt.salonName,
+        userId: userId,
+        bookingId: apt.id,
+      ),
+    );
+
+    if (submitted == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Thanks! Your review has been posted.')),
+      );
+    }
   }
 
   void _showCancelDialog(BuildContext context, AppointmentModel apt) {

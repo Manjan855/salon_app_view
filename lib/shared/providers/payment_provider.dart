@@ -14,10 +14,15 @@ class PaymentProvider with ChangeNotifier {
   bool _isStarting = false;
   String? _error;
   String? _activeProvider;
+  bool _notDeployed = false;
 
   /// True while the initiate call / browser launch is in flight.
   bool get isStarting => _isStarting;
   String? get error => _error;
+
+  /// True when the last failure was a missing `payments` function (HTTP 404),
+  /// i.e. the function has not been deployed yet.
+  bool get notDeployed => _notDeployed;
 
   /// 'esewa' | 'khalti' while a checkout is being started.
   String? get activeProvider => _activeProvider;
@@ -36,6 +41,7 @@ class PaymentProvider with ChangeNotifier {
     _isStarting = true;
     _activeProvider = provider;
     _error = null;
+    _notDeployed = false;
     notifyListeners();
 
     try {
@@ -52,6 +58,10 @@ class PaymentProvider with ChangeNotifier {
         throw Exception('Could not open the payment page in a browser.');
       }
       return true;
+    } on PaymentException catch (e) {
+      _error = e.message;
+      _notDeployed = e.isNotDeployed;
+      return false;
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
       return false;
