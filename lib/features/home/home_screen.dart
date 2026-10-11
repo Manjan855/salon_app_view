@@ -24,6 +24,11 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
   int _bottomIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
+  /// Bumped each time a Home card requests a fresh Explore view; the gender
+  /// chosen by that card is applied via [ValueKey] + [SalonInfoScreen.initialGender].
+  int _exploreSeed = 0;
+  String _exploreGender = 'All';
+
   final List<Map<String, String>> _offers = [
     {
       'title': 'Haircuts',
@@ -105,8 +110,15 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
     });
   }
 
-  /// Home cards act as shortcuts into the Explore tab.
-  void _openExplore() => setState(() => _bottomIndex = 1);
+  /// Home cards act as shortcuts into the Explore tab. [gender] preselects
+  /// the Explore Gender filter ('All' | 'Men' | 'Women' | 'Unisex').
+  void _openExplore({String? gender}) {
+    setState(() {
+      _exploreGender = gender ?? 'All';
+      _exploreSeed++;
+      _bottomIndex = 1;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -150,11 +162,11 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                       const SizedBox(height: 28),
                       _buildSectionTitle('  Services for Men'),
                       const SizedBox(height: 12),
-                      _buildServicesGrid(_menServices),
+                      _buildServicesGrid(_menServices, gender: 'Men'),
                       const SizedBox(height: 28),
                       _buildSectionTitle('  Services for Women'),
                       const SizedBox(height: 12),
-                      _buildServicesGrid(_womenServices),
+                      _buildServicesGrid(_womenServices, gender: 'Women'),
                       const SizedBox(height: 32),
                     ],
                   ),
@@ -164,7 +176,10 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
           ),
         );
       case 1:
-        return const SalonInfoScreen();
+        return SalonInfoScreen(
+          key: ValueKey('explore-$_exploreSeed-$_exploreGender'),
+          initialGender: _exploreGender,
+        );
       case 2:
         return const MyAppointmentsScreen();
       case 3:
@@ -416,7 +431,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
         itemBuilder: (ctx, i) {
           final offer = offers[i];
           return GestureDetector(
-            onTap: _openExplore,
+            onTap: () => _openExplore(),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: SizedBox(
@@ -479,7 +494,10 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
     );
   }
 
-  Widget _buildServicesGrid(List<Map<String, String>> servicesList) {
+  Widget _buildServicesGrid(
+    List<Map<String, String>> servicesList, {
+    required String gender,
+  }) {
     final kPurpleAccent = colors.purpleAccent;
     final kWhite = colors.white;
 
@@ -493,7 +511,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
         itemBuilder: (ctx, i) {
           final svc = servicesList[i];
           return GestureDetector(
-            onTap: _openExplore,
+            onTap: () => _openExplore(gender: gender),
             child: Column(
               children: [
                 ClipRRect(

@@ -9,6 +9,10 @@
 -- Images point at picsum.photos placeholders keyed by salon name so they are
 -- stable across re-seeds. Replace with storage://salons/... uploads before
 -- launch.
+--
+-- Since migration 20261006000006, every inserted service also carries a
+-- `gender` audience ('men' | 'women' | 'unisex') derived from its pack:
+--   gents  pack → 'men',  beauty pack → 'women',  unisex pack → 'unisex'.
 -- =============================================================================
 
 create or replace function public.seed_salon(
@@ -61,8 +65,8 @@ begin
 
   -- ---- services by pack (prices in NPR) ------------------------------------
   if p_pack = 'gents' then
-    insert into public.services (salon_id, name, description, price, duration_minutes, category, image_url)
-    select v_id, x.n, x.d, x.p, x.m, x.c::public.service_category, v_img
+    insert into public.services (salon_id, name, description, price, duration_minutes, category, gender, image_url)
+    select v_id, x.n, x.d, x.p, x.m, x.c::public.service_category, 'men'::public.service_gender, v_img
     from (values
       ('Haircut',            'Professional haircut & styling',                        350::numeric, 30, 'hair'),
       ('Kids Haircut',       'Haircut for children under 12',                         250::numeric, 30, 'hair'),
@@ -75,8 +79,8 @@ begin
     ) as x(n, d, p, m, c);
 
   elsif p_pack = 'beauty' then
-    insert into public.services (salon_id, name, description, price, duration_minutes, category, image_url)
-    select v_id, x.n, x.d, x.p, x.m, x.c::public.service_category, v_img
+    insert into public.services (salon_id, name, description, price, duration_minutes, category, gender, image_url)
+    select v_id, x.n, x.d, x.p, x.m, x.c::public.service_category, 'women'::public.service_gender, v_img
     from (values
       ('Haircut & Blow Dry', 'Haircut, wash and professional blow dry',               600::numeric, 45, 'hair'),
       ('Hair Spa',           'Nourishing keratin hair spa treatment',                 700::numeric, 45, 'spa'),
@@ -93,8 +97,8 @@ begin
     ) as x(n, d, p, m, c);
 
   else -- unisex
-    insert into public.services (salon_id, name, description, price, duration_minutes, category, image_url)
-    select v_id, x.n, x.d, x.p, x.m, x.c::public.service_category, v_img
+    insert into public.services (salon_id, name, description, price, duration_minutes, category, gender, image_url)
+    select v_id, x.n, x.d, x.p, x.m, x.c::public.service_category, 'unisex'::public.service_gender, v_img
     from (values
       ('Haircut',            'Professional unisex haircut & styling',                 400::numeric, 30, 'hair'),
       ('Kids Haircut',       'Haircut for children under 12',                         250::numeric, 30, 'hair'),

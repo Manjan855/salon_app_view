@@ -12,8 +12,9 @@ supabase/
 │   ├── 20261006000002_functions.sql               # 3. triggers, availability RPC, search RPC
 │   ├── 20261006000003_rls.sql                     # 4. row level security + write guards
 │   ├── 20261006000004_storage.sql                 # 5. avatars / salons / services buckets
-│   └── 20261006000005_backfill_profiles.sql       # 6. profiles for pre-existing auth users
-└── seed.sql                                       # 7. 29 salons across all 7 provinces + coupons
+│   ├── 20261006000005_backfill_profiles.sql       # 6. profiles for pre-existing auth users
+│   └── 20261006000006_service_gender.sql          # 7. services.gender ('men'|'women'|'unisex')
+└── seed.sql                                       # 8. 29 salons across all 7 provinces + coupons + genders
 ```
 
 `apply_all.sql` and `apply_storage.sql` are generated concatenations of the
@@ -74,7 +75,7 @@ back — the database is left untouched and the script can be re-run as-is.
 
 Afterwards, run the verification query at the bottom of this file.
 
-### Manual (7 separate runs)
+### Manual (8 separate runs)
 
 Run these one at a time, in order:
 
@@ -84,7 +85,8 @@ Run these one at a time, in order:
 4. `migrations/20261006000003_rls.sql`
 5. `migrations/20261006000004_storage.sql`
 6. `migrations/20261006000005_backfill_profiles.sql`
-7. `seed.sql`
+7. `migrations/20261006000006_service_gender.sql`
+8. `seed.sql`
 
 > Paste the **file contents**, not the file path. The SQL Editor treats anything
 > you paste as SQL — a path like `supabase/migrations/...` fails with
@@ -305,11 +307,17 @@ eSewa sandbox test wallet: id `9711111111` / password `Nepal@123` / OTP `123456`
       to the booking (RLS: must have a completed/confirmed booking at that
       salon). The `reviews_rating_sync` trigger keeps `salons.rating_avg` /
       `rating_count` current.
-- [ ] **Men/Women service tiles & the Gender filter** — the Home service tiles
-      now jump to Explore but cannot filter by service category (there is no
-      gender/category column on `salons`), and the Gender sheet is still
-      cosmetic. Wire these once a category/price facet exists on the salons
-      query (or drop the Gender filter).
+- [x] **Men/Women service tiles & the Gender filter** — **done via a
+      `services.gender` facet** (migration `20261006000006_service_gender.sql`:
+      `men` | `women` | `unisex`, seeded from each salon's pack — gents →
+      men, beauty → women, unisex → unisex). Explore now filters the salon
+      list by gender (`salonMatchesGender` in
+      `lib/features/salon_detail/gender_filter.dart`): a men-only or unisex
+      salon shows under **Men**, beauty/unisex under **Women**, unisex under
+      **Unisex**; rows with no facet data (offline demo list) count as unisex.
+      The Home "Services for Men / Women" tiles now jump into Explore with the
+      matching Gender filter preselected instead of doing nothing, and an
+      empty-filter state explains why nothing matched.
 - [ ] **Drop the archived legacy schema** after launch:
       `drop schema archive cascade;` — removes the old hand-made tables for
       good (nothing is currently lost by leaving it in place).

@@ -10,6 +10,7 @@
 --   supabase/migrations/20261006000002_functions.sql
 --   supabase/migrations/20261006000003_rls.sql
 --   supabase/migrations/20261006000005_backfill_profiles.sql
+--   supabase/migrations/20261006000006_service_gender.sql
 --   supabase/seed.sql
 
 
@@ -56,6 +57,7 @@ $$;
 
 comment on schema archive is
   'Pre-existing hand-made salon schema, archived 2026-10-06. Drop once the rebuilt schema is confirmed.';
+
 
 -- ==========================================================================
 -- FILE: supabase/migrations/20261006000001_schema.sql
@@ -402,6 +404,7 @@ create table public.coupons (
 );
 
 create index coupons_active_idx on public.coupons (is_active) where is_active;
+
 
 -- ==========================================================================
 -- FILE: supabase/migrations/20261006000002_functions.sql
@@ -779,6 +782,7 @@ as $$
   limit p_limit offset p_offset;
 $$;
 
+
 -- ==========================================================================
 -- FILE: supabase/migrations/20261006000003_rls.sql
 -- ==========================================================================
@@ -1078,6 +1082,7 @@ create policy "coupons_public_read"
     and (valid_to is null or valid_to >= now())
   );
 
+
 -- ==========================================================================
 -- FILE: supabase/migrations/20261006000005_backfill_profiles.sql
 -- ==========================================================================
@@ -1110,6 +1115,84 @@ select
   (select count(*) from auth.users)               as auth_users,
   (select count(*) from public.profiles)          as profiles_after_backfill;
 
+
+-- ==========================================================================
+-- FILE: supabase/migrations/20261006000006_service_gender.sql
+-- ==========================================================================
+
+-- =============================================================================
+-- Salon App — Service gender facet
+--
+-- Adds a `gender` audience column to `public.services` so the Explore
+-- "Gender" sheet and the Home "Services for Men / Women" tiles can filter on
+-- real data instead of being cosmetic.
+--
+-- Idempotent and safe against both a fresh project and one that already ran
+-- every earlier migration:
+--   1. creates `service_gender` enum if missing,
+--   2. adds the `gender` column (default 'unisex'),
+--   3. backfills existing rows from the salon-level tags the seed writes
+--      ('gents'/'mens-only' → men, 'beauty'/'women-only' → women),
+--   4. applies name-based corrections for rows whose tags are ambiguous.
+--
+-- Fresh installs: `seed.sql` now sets `gender` explicitly when inserting
+-- services, so step 3 is a no-op there and the data is exact from the start.
+-- =============================================================================
+
+-- ---- enum: service_gender ------------------------------------------------
+do $$
+begin
+  if not exists (
+    select 1
+      from pg_type t
+      join pg_namespace n on n.oid = t.typnamespace
+     where n.nspname = 'public' and t.typname = 'service_gender'
+  ) then
+    create type public.service_gender as enum ('men', 'women', 'unisex');
+  end if;
+end $$;
+
+-- ---- column -----------------------------------------------------------------
+alter table public.services
+  add column if not exists gender public.service_gender not null default 'unisex';
+
+-- ---- backfill from salon tags (live project already has the seed applied) ---
+update public.services s
+   set gender = case
+     when exists (select 1 from unnest(sal.tags) t where t in ('gents','mens-only'))
+       then 'men'
+     when exists (select 1 from unnest(sal.tags) t where t in ('beauty','women-only'))
+       then 'women'
+     else 'unisex'
+   end
+  from public.salons sal
+ where sal.id = s.salon_id
+   and s.gender = 'unisex';
+
+-- ---- corrections for ambiguously-tagged or untagged rows -------------------
+update public.services s
+   set gender = 'men'
+ where s.gender = 'unisex'
+   and lower(s.name) in ('beard trim & shape', 'clean shave');
+
+update public.services s
+   set gender = 'women'
+ where s.gender = 'unisex'
+   and (lower(s.name) like '%bridal%'
+        or lower(s.name) like '%makeup%'
+        or lower(s.name) like '%manicure%'
+        or lower(s.name) like '%pedicure%');
+
+-- ---- index ------------------------------------------------------------------
+create index if not exists services_gender_idx
+  on public.services (gender) where is_active;
+
+-- ---- verification ------------------------------------------------------------
+select s.gender, count(*)
+  from public.services s
+ group by s.gender
+ order by 1;
+
 -- ==========================================================================
 -- FILE: supabase/seed.sql
 -- ==========================================================================
@@ -1125,6 +1208,10 @@ select
 -- Images point at picsum.photos placeholders keyed by salon name so they are
 -- stable across re-seeds. Replace with storage://salons/... uploads before
 -- launch.
+--
+-- Since migration 20261006000006, every inserted service also carries a
+-- `gender` audience ('men' | 'women' | 'unisex') derived from its pack:
+--   gents  pack → 'men',  beauty pack → 'women',  unisex pack → 'unisex'.
 -- =============================================================================
 
 create or replace function public.seed_salon(
@@ -1177,8 +1264,8 @@ begin
 
   -- ---- services by pack (prices in NPR) ------------------------------------
   if p_pack = 'gents' then
-    insert into public.services (salon_id, name, description, price, duration_minutes, category, image_url)
-    select v_id, x.n, x.d, x.p, x.m, x.c::public.service_category, v_img
+    insert into public.services (salon_id, name, description, price, duration_minutes, category, gender, image_url)
+    select v_id, x.n, x.d, x.p, x.m, x.c::public.service_category, 'men'::public.service_gender, v_img
     from (values
       ('Haircut',            'Professional haircut & styling',                        350::numeric, 30, 'hair'),
       ('Kids Haircut',       'Haircut for children under 12',                         250::numeric, 30, 'hair'),
@@ -1191,8 +1278,8 @@ begin
     ) as x(n, d, p, m, c);
 
   elsif p_pack = 'beauty' then
-    insert into public.services (salon_id, name, description, price, duration_minutes, category, image_url)
-    select v_id, x.n, x.d, x.p, x.m, x.c::public.service_category, v_img
+    insert into public.services (salon_id, name, description, price, duration_minutes, category, gender, image_url)
+    select v_id, x.n, x.d, x.p, x.m, x.c::public.service_category, 'women'::public.service_gender, v_img
     from (values
       ('Haircut & Blow Dry', 'Haircut, wash and professional blow dry',               600::numeric, 45, 'hair'),
       ('Hair Spa',           'Nourishing keratin hair spa treatment',                 700::numeric, 45, 'spa'),
@@ -1209,8 +1296,8 @@ begin
     ) as x(n, d, p, m, c);
 
   else -- unisex
-    insert into public.services (salon_id, name, description, price, duration_minutes, category, image_url)
-    select v_id, x.n, x.d, x.p, x.m, x.c::public.service_category, v_img
+    insert into public.services (salon_id, name, description, price, duration_minutes, category, gender, image_url)
+    select v_id, x.n, x.d, x.p, x.m, x.c::public.service_category, 'unisex'::public.service_gender, v_img
     from (values
       ('Haircut',            'Professional unisex haircut & styling',                 400::numeric, 30, 'hair'),
       ('Kids Haircut',       'Haircut for children under 12',                         250::numeric, 30, 'hair'),
@@ -1323,3 +1410,4 @@ select city, province, count(*) as salons, sum((select count(*) from public.serv
 from public.salons
 group by city, province
 order by province, city;
+

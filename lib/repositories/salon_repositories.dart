@@ -42,6 +42,34 @@ class SalonRepository {
     }
   }
 
+  /// Salon id → set of service-gender facets ('men' | 'women' | 'unisex').
+  ///
+  /// Feeds the Explore Gender filter. A salon appears under every gender it
+  /// offers at least one active service for, so mixed salons show up under
+  /// more than one filter.
+  Future<Map<String, Set<String>>> getSalonGenders() async {
+    try {
+      final response = await _supabase
+          .from('services')
+          .select('salon_id, gender')
+          .eq('is_active', true);
+
+      final facets = <String, Set<String>>{};
+      for (final row in response as List<dynamic>) {
+        final r = row as Map<String, dynamic>;
+        final salonId = r['salon_id'] as String?;
+        final gender = r['gender'] as String?;
+        if (salonId == null || gender == null) continue;
+        facets.putIfAbsent(salonId, () => <String>{}).add(gender);
+      }
+      return facets;
+    } catch (e) {
+      // The `services.gender` column only exists after migration
+      // 20261006000006; until then the app must keep working unfiltered.
+      throw Exception('Failed to load gender facets: $e');
+    }
+  }
+
   /// Active stylists for one salon.
   Future<List<StaffModel>> getStaffBySalon(String salonId) async {
     try {

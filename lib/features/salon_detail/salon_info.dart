@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:salon_app_view/features/salon_detail/gender_filter.dart';
 import 'package:salon_app_view/features/salon_detail/services_screen.dart';
 import 'package:salon_app_view/core/theme/app_theme.dart';
 import 'package:salon_app_view/shared/providers/salon_provider.dart';
@@ -36,18 +37,47 @@ class SalonModel {
 
 // ─── Info Screen ──────────────────────────────────────────
 class SalonInfoScreen extends StatefulWidget {
-  const SalonInfoScreen({super.key});
+  const SalonInfoScreen({
+    super.key,
+    this.initialGender = 'All',
+    this.initialQuery,
+  });
+
+  /// Preselect the Gender filter ('All' | 'Men' | 'Women' | 'Unisex').
+  /// Set by the Home service tiles when they jump into Explore.
+  final String initialGender;
+
+  /// Optional search term applied on open (unused by the current tiles).
+  final String? initialQuery;
 
   @override
   State<SalonInfoScreen> createState() => _SalonInfoScreenState();
 }
 
 class _SalonInfoScreenState extends State<SalonInfoScreen> {
-  String _selectedGender = 'All';
+  late String _selectedGender;
   final TextEditingController _searchCtrl = TextEditingController();
   bool _searchOpen = false;
-  String _query = '';
+  late String _query;
   String _sortBy = 'Rating';
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedGender = widget.initialGender;
+    final q = widget.initialQuery?.trim() ?? '';
+    _query = q;
+    if (q.isNotEmpty) _searchCtrl.text = q;
+  }
+
+  @override
+  void didUpdateWidget(SalonInfoScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialGender != widget.initialGender &&
+        widget.initialGender != _selectedGender) {
+      _selectedGender = widget.initialGender;
+    }
+  }
 
   @override
   void dispose() {
@@ -120,7 +150,8 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
   /// Prefer the live salons from Supabase; fall back to the demo rows only
   /// when nothing has loaded (e.g. offline).
   List<SalonModel> _resolveSalons(BuildContext context) {
-    final providerSalons = context.watch<SalonProvider>().salons;
+    final provider = context.watch<SalonProvider>();
+    final providerSalons = provider.salons;
     final list = providerSalons.isEmpty
         ? _salons
         : providerSalons
@@ -140,13 +171,22 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
               ),
             )
             .toList();
-    return _applyQueryAndSort(list);
+    return _applyQueryAndSort(list, provider.gendersBySalon);
   }
 
-  /// Applies the search query + sort choice locally (the salon list is small
-  /// enough to keep client-side; offline/demo rows work the same way).
-  List<SalonModel> _applyQueryAndSort(List<SalonModel> list) {
-    var result = list;
+  /// Applies the Gender filter + search query + sort choice locally (the
+  /// salon list is small enough to keep client-side; offline/demo rows work
+  /// the same way).
+  List<SalonModel> _applyQueryAndSort(
+    List<SalonModel> list,
+    Map<String, Set<String>> gendersBySalon,
+  ) {
+    var result = list
+        .where(
+          (s) => salonMatchesGender(gendersBySalon, s.id, _selectedGender),
+        )
+        .toList();
+
     final q = _query.trim().toLowerCase();
     if (q.isNotEmpty) {
       result = result
@@ -183,22 +223,25 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
             _buildTopBar(context),
             _buildFilterBar(),
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                itemCount: salons.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
-                itemBuilder: (ctx, i) => _SalonCard(
-                  salon: salons[i],
-                  onViewTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SalonServicesScreen(salon: salons[i]),
+              child: salons.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      itemCount: salons.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
+                      itemBuilder: (ctx, i) => _SalonCard(
+                        salon: salons[i],
+                        onViewTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  SalonServicesScreen(salon: salons[i]),
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
-              ),
+                    ),
             ),
           ],
         ),
@@ -364,6 +407,67 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
       builder: (_) => _FilterSheet(
         initialSort: _sortBy,
         onApply: (sort) => setState(() => _sortBy = sort),
+      ),
+    );
+  }
+
+  /// Shown when the Gender / search / sort combination matches nothing.
+  Widget _buildEmptyState() {
+    final colors = AppThemeColors.of(context);
+    final kPurpleLight = colors.purpleLight;
+    final kTextMuted = colors.textMuted;
+    final kWhite = colors.white;
+    final hasActiveFilter =
+        _selectedGender != 'All' || _query.trim().isNotEmpty;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.search_off_rounded,
+              color: kPurpleLight.withValues(alpha: 0.6),
+              size: 56,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _selectedGender == 'All'
+                  ? 'No salons found'
+                  : 'No ${_selectedGender.toLowerCase()} salons found',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: kWhite,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try clearing the search or switching back to All.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: kTextMuted, fontSize: 13, height: 1.4),
+            ),
+            if (hasActiveFilter) ...[
+              const SizedBox(height: 20),
+              OutlinedButton(
+                onPressed: () => setState(() {
+                  _selectedGender = 'All';
+                  _query = '';
+                  _searchCtrl.clear();
+                }),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: kPurpleLight,
+                  side: BorderSide(
+                    color: kPurpleLight.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: const Text('Clear filters'),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

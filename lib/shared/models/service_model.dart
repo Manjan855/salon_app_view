@@ -49,6 +49,10 @@ class ServiceModel {
   final double price;
   final int durationMinutes;
   final String category;
+
+  /// Audience facet from `public.services.gender`
+  /// ('men' | 'women' | 'unisex'), used by the Explore Gender filter.
+  final String gender;
   final String? imageUrl;
 
   ServiceModel({
@@ -59,6 +63,7 @@ class ServiceModel {
     required this.price,
     required this.durationMinutes,
     required this.category,
+    this.gender = 'unisex',
     this.imageUrl,
   });
 
@@ -71,6 +76,7 @@ class ServiceModel {
       price: (json['price'] as num).toDouble(),
       durationMinutes: json['duration_minutes'],
       category: json['category'] ?? 'General',
+      gender: json['gender'] ?? 'unisex',
       imageUrl: json['image_url'],
     );
   }
@@ -84,6 +90,7 @@ class ServiceModel {
       'price': price,
       'duration_minutes': durationMinutes,
       'category': category,
+      'gender': gender,
       'image_url': imageUrl,
     };
   }

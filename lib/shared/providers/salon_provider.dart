@@ -109,8 +109,17 @@ class SalonProvider with ChangeNotifier {
   List<SalonModel> _salons = [];
   bool _isLoading = false;
 
+  /// salon id → set of service genders ('men' | 'women' | 'unisex').
+  /// Populated by [fetchSalonGenders]; never throws (missing/migrated column
+  /// degrades to an empty map, i.e. "everything is unisex").
+  Map<String, Set<String>> _gendersBySalon = {};
+
   List<SalonModel> get salons => _salons;
   bool get isLoading => _isLoading;
+
+  /// Gender facets for the Explore filter. Empty until loaded (or when the
+  /// `services.gender` column is not yet deployed).
+  Map<String, Set<String>> get gendersBySalon => _gendersBySalon;
 
   Future<void> fetchSalons() async {
     _isLoading = true;
@@ -124,5 +133,21 @@ class SalonProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+
+    // Independent of the salon list; loads in parallel with the UI already
+    // rendering the unfiltered list.
+    await fetchSalonGenders();
+  }
+
+  Future<void> fetchSalonGenders() async {
+    try {
+      _gendersBySalon = await _salonRepo.getSalonGenders();
+    } catch (e) {
+      // e.g. `services.gender` does not exist yet (migration not applied):
+      // keep the app usable, the Gender filter just shows Unisex salons.
+      debugPrint('Gender facets unavailable: $e');
+      _gendersBySalon = {};
+    }
+    notifyListeners();
   }
 }
