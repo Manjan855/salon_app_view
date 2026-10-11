@@ -51,7 +51,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SUPABASE_URL = Deno.env.get("https://zhnfhkahspsqbfjetwlt.supabase.co/functions/v1/payments") ?? "";
 
 /**
  * Resolve a key that bypasses RLS. Preference order:
