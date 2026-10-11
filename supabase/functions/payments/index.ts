@@ -51,7 +51,11 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
-const SUPABASE_URL = Deno.env.get("https://zhnfhkahspsqbfjetwlt.supabase.co/functions/v1/payments") ?? "";
+// Supabase auto-injects SUPABASE_URL (the project root, e.g.
+// https://<ref>.supabase.co) into every hosted function. Do NOT hardcode the
+// function's own URL here — the code below appends "/functions/v1/payments/…"
+// and passes this value to createClient, so it must be the project root.
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 
 /**
  * Resolve a key that bypasses RLS. Preference order:
