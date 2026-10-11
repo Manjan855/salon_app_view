@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:salon_app_view/core/theme/app_theme.dart';
-import 'package:salon_app_view/core/router/route_name.dart';
 import 'package:salon_app_view/features/appointment/appointment_screen.dart';
 
 class ConfirmationScreen extends StatelessWidget {
@@ -108,7 +107,7 @@ class ConfirmationScreen extends StatelessWidget {
                       width: 90,
                       height: 90,
                       decoration: BoxDecoration(
-                        color: kPurpleAccent.withOpacity(0.2),
+                        color: kPurpleAccent.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                         border: Border.all(color: kPurpleAccent, width: 2),
                       ),
@@ -196,7 +195,7 @@ class ConfirmationScreen extends StatelessWidget {
                         );
                       },
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: kPurpleLight.withOpacity(0.4)),
+                        side: BorderSide(color: kPurpleLight.withValues(alpha: 0.4)),
                         padding: const EdgeInsets.symmetric(vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),

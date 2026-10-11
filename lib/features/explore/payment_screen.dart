@@ -275,7 +275,7 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                       : _continue,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: (_selectedPayment == null || _paying)
-                        ? kPurpleAccent.withOpacity(0.4)
+                        ? kPurpleAccent.withValues(alpha: 0.4)
                         : kPurpleAccent,
                     foregroundColor: kWhite,
                     padding: const EdgeInsets.symmetric(vertical: 15),
@@ -337,11 +337,11 @@ class _PaymentTile extends StatelessWidget {
     final kTextMuted = colors.textMuted;
 
     final labelColor = !enabled
-        ? kTextMuted.withOpacity(0.5)
+        ? kTextMuted.withValues(alpha: 0.5)
         : isSelected
             ? kWhite
             : kTextMuted;
-    final mutedColor = kTextMuted.withOpacity(enabled ? 1 : 0.5);
+    final mutedColor = kTextMuted.withValues(alpha: enabled ? 1 : 0.5);
 
     return GestureDetector(
       onTap: enabled ? onTap : null,
@@ -350,11 +350,11 @@ class _PaymentTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
           color: isSelected
-              ? kPurpleAccent.withOpacity(0.15)
-              : kPurpleMid.withOpacity(enabled ? 0.5 : 0.25),
+              ? kPurpleAccent.withValues(alpha: 0.15)
+              : kPurpleMid.withValues(alpha: enabled ? 0.5 : 0.25),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? kPurpleAccent : kPurpleLight.withOpacity(0.3),
+            color: isSelected ? kPurpleAccent : kPurpleLight.withValues(alpha: 0.3),
             width: isSelected ? 1.5 : 0.5,
           ),
         ),

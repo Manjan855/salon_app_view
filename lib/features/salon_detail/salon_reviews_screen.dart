@@ -176,7 +176,7 @@ class _SalonReviewsScreenState extends State<SalonReviewsScreen> {
         children: [
           const SizedBox(height: 90),
           Icon(Icons.rate_review_outlined,
-              color: colors.textMuted.withOpacity(0.5), size: 52),
+              color: colors.textMuted.withValues(alpha: 0.5), size: 52),
           const SizedBox(height: 14),
           Center(
             child: Text(
@@ -221,7 +221,7 @@ class _SalonReviewsScreenState extends State<SalonReviewsScreen> {
         color: colors.purpleMid,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colors.purpleLight.withOpacity(0.2),
+          color: colors.purpleLight.withValues(alpha: 0.2),
           width: 0.5,
         ),
       ),
@@ -273,7 +273,7 @@ class _ReviewCard extends StatelessWidget {
         color: colors.purpleMid,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: colors.purpleLight.withOpacity(0.2),
+          color: colors.purpleLight.withValues(alpha: 0.2),
           width: 0.5,
         ),
       ),
@@ -337,7 +337,7 @@ class _ReviewCard extends StatelessWidget {
             Text(
               review.comment!.trim(),
               style: TextStyle(
-                color: colors.white.withOpacity(0.9),
+                color: colors.white.withValues(alpha: 0.9),
                 fontSize: 13,
                 height: 1.35,
               ),
@@ -468,7 +468,7 @@ class _WriteReviewSheetState extends State<WriteReviewSheet> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: colors.purpleLight.withOpacity(0.4),
+                  color: colors.purpleLight.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

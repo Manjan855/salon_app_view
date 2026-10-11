@@ -10,7 +10,7 @@ class LocationScreen extends StatefulWidget {
 
 class _LocationScreenState extends State<LocationScreen> {
   String _selectedCity = '';
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   // List of available cities
   final List<String> _allCities = [
@@ -176,7 +176,7 @@ class _LocationScreenState extends State<LocationScreen> {
                               return ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: Colors.deepPurple
-                                      .withOpacity(0.1),
+                                      .withValues(alpha: 0.1),
                                   child: const Icon(
                                     Icons.location_city,
                                     color: Colors.deepPurple,
@@ -203,7 +203,7 @@ class _LocationScreenState extends State<LocationScreen> {
                                   Navigator.pop(context);
                                   _showSelectedCitySnackBar(city);
                                   Future.delayed(const Duration(milliseconds: 600), () {
-                                    if (mounted) {
+                                    if (context.mounted) {
                                       Navigator.pushReplacementNamed(context, RouteName.home);
                                     }
                                   });
@@ -245,7 +245,7 @@ class _LocationScreenState extends State<LocationScreen> {
               width: 200,
               height: 200,
               decoration: BoxDecoration(
-                color: Colors.deepPurpleAccent.withOpacity(0.3),
+                color: Colors.deepPurpleAccent.withValues(alpha: 0.3),
                 shape: BoxShape.circle,
               ),
             ),
@@ -257,7 +257,7 @@ class _LocationScreenState extends State<LocationScreen> {
               width: 150,
               height: 150,
               decoration: BoxDecoration(
-                color: Colors.deepPurpleAccent.withOpacity(0.2),
+                color: Colors.deepPurpleAccent.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
             ),
@@ -284,7 +284,7 @@ class _LocationScreenState extends State<LocationScreen> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -347,7 +347,7 @@ class _LocationScreenState extends State<LocationScreen> {
                             ),
                           );
                           Future.delayed(const Duration(milliseconds: 600), () {
-                            if (mounted) {
+                            if (context.mounted) {
                               Navigator.pushReplacementNamed(context, RouteName.home);
                             }
                           });
@@ -441,7 +441,7 @@ class _LocationScreenState extends State<LocationScreen> {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
+                        color: Colors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(

@@ -122,9 +122,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   child: ListView.separated(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     itemCount: notifications.length,
-                    separatorBuilder: (_, __) => Container(
+                    separatorBuilder: (_, _) => Container(
                       height: 0.5,
-                      color: kPurpleLight.withOpacity(0.15),
+                      color: kPurpleLight.withValues(alpha: 0.15),
                     ),
                     itemBuilder: (ctx, i) {
                       final notif = notifications[i];
@@ -135,7 +135,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           vertical: 8,
                         ),
                         leading: CircleAvatar(
-                          backgroundColor: color.withOpacity(0.15),
+                          backgroundColor: color.withValues(alpha: 0.15),
                           child: Icon(icon, color: color, size: 20),
                         ),
                         title: Row(

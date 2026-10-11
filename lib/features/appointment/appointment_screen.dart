@@ -240,7 +240,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
           children: [
             Icon(
               Icons.calendar_today_outlined,
-              color: kTextMuted.withOpacity(0.4),
+              color: kTextMuted.withValues(alpha: 0.4),
               size: 48,
             ),
             const SizedBox(height: 12),
@@ -267,7 +267,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
               color: colors.purpleMid,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: kPurpleLight.withOpacity(0.2),
+                color: kPurpleLight.withValues(alpha: 0.2),
                 width: 0.5,
               ),
             ),
@@ -343,7 +343,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                             onPressed: () => _showCancelDialog(context, apt),
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: kPurpleLight.withOpacity(0.3),
+                                color: kPurpleLight.withValues(alpha: 0.3),
                               ),
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               shape: RoundedRectangleBorder(
@@ -398,7 +398,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                         children: [
                           Container(
                             height: 0.5,
-                            color: kPurpleLight.withOpacity(0.2),
+                            color: kPurpleLight.withValues(alpha: 0.2),
                             margin: const EdgeInsets.only(bottom: 14),
                           ),
                           Text(
@@ -462,7 +462,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
             ),
           ),
           style: OutlinedButton.styleFrom(
-            side: BorderSide(color: kPurpleLight.withOpacity(0.3)),
+            side: BorderSide(color: kPurpleLight.withValues(alpha: 0.3)),
             padding: const EdgeInsets.symmetric(vertical: 10),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -531,7 +531,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: kPurpleLight.withOpacity(0.4),
+                color: kPurpleLight.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -540,7 +540,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: kRed.withOpacity(0.15),
+                color: kRed.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(Icons.cancel_outlined, color: kRed, size: 28),
@@ -573,7 +573,7 @@ class _MyAppointmentsScreenState extends State<MyAppointmentsScreen>
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(sheetContext),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: kPurpleLight.withOpacity(0.3)),
+                      side: BorderSide(color: kPurpleLight.withValues(alpha: 0.3)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -641,7 +641,7 @@ class _OtpBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: kPurpleDark,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: kPurpleLight.withOpacity(0.4), width: 1),
+        border: Border.all(color: kPurpleLight.withValues(alpha: 0.4), width: 1),
       ),
       child: Center(
         child: Text(

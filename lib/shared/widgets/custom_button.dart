@@ -24,7 +24,6 @@ class CustomButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final buttonColor = bgColor ?? const Color(0xFFC56AFF);
 
     return SizedBox(
@@ -35,8 +34,8 @@ class CustomButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: buttonColor,
           foregroundColor: textColor,
-          disabledBackgroundColor: buttonColor.withOpacity(0.4),
-          disabledForegroundColor: textColor.withOpacity(0.6),
+          disabledBackgroundColor: buttonColor.withValues(alpha: 0.4),
+          disabledForegroundColor: textColor.withValues(alpha: 0.6),
           elevation: 4,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadius),

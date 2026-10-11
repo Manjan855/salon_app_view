@@ -123,7 +123,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: salons.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      separatorBuilder: (_, _) => const SizedBox(height: 16),
       itemBuilder: (ctx, i) {
         final salon = salons[i];
         return Container(
@@ -148,7 +148,7 @@ class _FavouritesScreenState extends State<FavouritesScreen> {
                         width: 80,
                         height: 80,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                        errorBuilder: (_, _, _) => Container(
                           width: 80,
                           height: 80,
                           color: kPurpleAccent,

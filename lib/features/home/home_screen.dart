@@ -294,7 +294,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: salons.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (ctx, i) {
           final salon = salons[i];
           return GestureDetector(
@@ -316,7 +316,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                     Image.network(
                       salon.imageUrl ?? '',
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+                      errorBuilder: (_, _, _) => Container(
                         color: kPurpleAccent,
                         child: Icon(Icons.store, color: kWhite, size: 40),
                       ),
@@ -328,7 +328,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                           end: Alignment.bottomCenter,
                           colors: [
                             Colors.transparent,
-                            kPurpleAccent.withOpacity(0.8),
+                            kPurpleAccent.withValues(alpha: 0.8),
                           ],
                           stops: const [0.4, 1.0],
                         ),
@@ -412,7 +412,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: offers.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (ctx, i) {
           final offer = offers[i];
           return GestureDetector(
@@ -427,7 +427,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                     Image.network(
                       offer['image']!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
+                      errorBuilder: (_, _, _) =>
                           Container(color: kPurpleAccent),
                     ),
                     Container(
@@ -489,7 +489,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: servicesList.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (ctx, i) {
           final svc = servicesList[i];
           return GestureDetector(
@@ -504,7 +504,7 @@ class _SalonHomeScreenState extends State<SalonHomeScreen> {
                     child: Image.network(
                       svc['image']!,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+                      errorBuilder: (_, _, _) => Container(
                         color: kPurpleAccent,
                         child: Icon(Icons.person, color: kWhite),
                       ),

@@ -242,22 +242,11 @@ class ProfileScreen extends StatelessWidget {
               final navigator = Navigator.of(context);
               navigator.pop(); // Close dialog
 
-              // FIX: Checking standard logout method naming variants to avoid compilation issues
+              // Sign out through the typed provider. The previous dynamic
+              // fallbacks silently failed (no such methods), so the session
+              // was never actually cleared.
               final auth = Provider.of<AuthProvider>(context, listen: false);
-
-              try {
-                // Tries standard logout methods
-                await (auth as dynamic).logout();
-              } catch (_) {
-                try {
-                  await (auth as dynamic).logOut();
-                } catch (_) {
-                  // Fallback if it requires context or is named differently
-                  try {
-                    await (auth as dynamic).logout(context);
-                  } catch (_) {}
-                }
-              }
+              await auth.logoutUser();
 
               navigator.pushNamedAndRemoveUntil(
                 RouteName.login,
@@ -380,7 +369,7 @@ class ProfileScreen extends StatelessWidget {
               child: ListView.separated(
                 shrinkWrap: true,
                 itemCount: promocodes.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (ctx, i) {
                   final promo = promocodes[i];
                   return Container(
@@ -652,7 +641,7 @@ class ProfileScreen extends StatelessWidget {
               child: ListView.separated(
                 shrinkWrap: true,
                 itemCount: safetyPoints.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 14),
+                separatorBuilder: (_, _) => const SizedBox(height: 14),
                 itemBuilder: (ctx, i) {
                   final point = safetyPoints[i];
                   return Row(

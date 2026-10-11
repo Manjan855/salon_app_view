@@ -82,7 +82,7 @@ class ReviewRepository {
           .insert({
             'salon_id': salonId,
             'user_id': userId,
-            if (bookingId != null) 'booking_id': bookingId,
+            'booking_id': ?bookingId,
             'rating': rating,
             if (clean.isNotEmpty) 'comment': clean,
           })

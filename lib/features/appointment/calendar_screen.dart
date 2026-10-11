@@ -45,7 +45,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final kPurpleDark = colors.purpleDark;
     final kPurpleMid = colors.purpleMid;
     final kPurpleAccent = colors.purpleAccent;
-    final kPurpleLight = colors.purpleLight;
     final kWhite = colors.white;
     final kTextMuted = colors.textMuted;
 
@@ -145,7 +144,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 6,
                                 ),
-                                color: kPurpleAccent.withOpacity(0.6),
+                                color: kPurpleAccent.withValues(alpha: 0.6),
                                 child: Center(
                                   child: Text(
                                     d,

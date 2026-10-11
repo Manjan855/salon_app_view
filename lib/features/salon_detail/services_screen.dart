@@ -289,7 +289,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
             width: double.infinity,
             height: 220,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
+            errorBuilder: (_, _, _) => Container(
               height: 220,
               color: kPurpleAccent,
               child: Icon(Icons.store, color: kWhite, size: 60),
@@ -544,7 +544,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
     final kPurpleLight = colors.purpleLight;
     return Container(
       height: 0.5,
-      color: kPurpleLight.withOpacity(0.2),
+      color: kPurpleLight.withValues(alpha: 0.2),
       margin: const EdgeInsets.symmetric(horizontal: 16),
     );
   }
@@ -568,7 +568,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
       decoration: BoxDecoration(
         color: kPurpleMid,
         border: Border(
-          top: BorderSide(color: kPurpleLight.withOpacity(0.2), width: 0.5),
+          top: BorderSide(color: kPurpleLight.withValues(alpha: 0.2), width: 0.5),
         ),
       ),
       child: _hasSelection
@@ -649,7 +649,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: kPurpleDark.withOpacity(0.4),
+                            color: kPurpleDark.withValues(alpha: 0.4),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -671,7 +671,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
               child: ElevatedButton(
                 onPressed: null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: kPurpleAccent.withOpacity(0.4),
+                  backgroundColor: kPurpleAccent.withValues(alpha: 0.4),
                   foregroundColor: kTextMuted,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
@@ -696,7 +696,7 @@ class _SalonServicesScreenState extends State<SalonServicesScreen> {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: kPurpleDark.withOpacity(0.4),
+                        color: kPurpleDark.withValues(alpha: 0.4),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -816,7 +816,7 @@ class _ServiceTile extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: item.added
-                            ? kGreen.withOpacity(0.15)
+                            ? kGreen.withValues(alpha: 0.15)
                             : kPurpleAccent,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
@@ -841,7 +841,7 @@ class _ServiceTile extends StatelessWidget {
         ),
         Container(
           height: 0.5,
-          color: kPurpleLight.withOpacity(0.15),
+          color: kPurpleLight.withValues(alpha: 0.15),
           margin: const EdgeInsets.symmetric(horizontal: 16),
         ),
       ],

@@ -227,7 +227,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   final success = await authProvider
                                       .loginWithGoogle();
 
-                                  if (!mounted) return;
+                                  if (!context.mounted) return;
 
                                   if (success) {
                                     Navigator.pushReplacementNamed(

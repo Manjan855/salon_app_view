@@ -186,7 +186,7 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                 itemCount: salons.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (_, _) => const SizedBox(height: 12),
                 itemBuilder: (ctx, i) => _SalonCard(
                   salon: salons[i],
                   onViewTap: () {
@@ -298,7 +298,7 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  border: Border.all(color: kPurpleLight.withOpacity(0.3)),
+                  border: Border.all(color: kPurpleLight.withValues(alpha: 0.3)),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -327,7 +327,7 @@ class _SalonInfoScreenState extends State<SalonInfoScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  border: Border.all(color: kPurpleLight.withOpacity(0.3)),
+                  border: Border.all(color: kPurpleLight.withValues(alpha: 0.3)),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -420,7 +420,7 @@ class _SalonCard extends StatelessWidget {
                     width: 88,
                     height: 88,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    errorBuilder: (_, _, _) => Container(
                       width: 88,
                       height: 88,
                       color: kPurpleAccent,
@@ -485,7 +485,7 @@ class _SalonCard extends StatelessWidget {
           ),
 
           // ── Divider ──
-          Container(height: 0.5, color: kPurpleLight.withOpacity(0.2)),
+          Container(height: 0.5, color: kPurpleLight.withValues(alpha: 0.2)),
 
           // ── Bottom row: offer + view button ──
           Padding(
@@ -648,7 +648,7 @@ class _FilterSheetState extends State<_FilterSheet> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: kPurpleLight.withOpacity(0.4),
+                color: kPurpleLight.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -704,7 +704,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                         border: Border.all(
                           color: _sortBy == s
                               ? kPurpleAccent
-                              : kPurpleLight.withOpacity(0.3),
+                              : kPurpleLight.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Text(
@@ -746,7 +746,7 @@ class _FilterSheetState extends State<_FilterSheet> {
               activeTrackColor: kPurpleAccent,
               inactiveTrackColor: kPurpleDark,
               thumbColor: kPurpleLight,
-              overlayColor: kPurpleAccent.withOpacity(0.2),
+              overlayColor: kPurpleAccent.withValues(alpha: 0.2),
             ),
             child: Slider(
               value: _maxPrice,
@@ -817,7 +817,7 @@ class _GenderSheet extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: kPurpleLight.withOpacity(0.4),
+                color: kPurpleLight.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -848,7 +848,7 @@ class _GenderSheet extends StatelessWidget {
                   border: Border.all(
                     color: selected == g
                         ? kPurpleAccent
-                        : kPurpleLight.withOpacity(0.2),
+                        : kPurpleLight.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Row(

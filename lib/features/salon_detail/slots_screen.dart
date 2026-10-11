@@ -201,7 +201,7 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
           width: double.infinity,
           height: 250,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
+          errorBuilder: (_, _, _) => Container(
             height: 250,
             color: kPurpleAccent,
             child: Icon(Icons.store, color: kWhite, size: 60),
@@ -221,7 +221,7 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
         decoration: BoxDecoration(
           color: kPurpleAccent.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: kPurpleAccent.withOpacity(0.5), width: 0.5),
+          border: Border.all(color: kPurpleAccent.withValues(alpha: 0.5), width: 0.5),
         ),
         child: Text(
           'Availability of slots for the Day?',
@@ -288,7 +288,7 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: 7,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (ctx, i) {
           // Recompute from today so the strip always starts at today.
           final today = nepalToday();
@@ -308,7 +308,7 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
                 border: Border.all(
                   color: selected
                       ? kPurpleAccent
-                      : kPurpleLight.withOpacity(0.2),
+                      : kPurpleLight.withValues(alpha: 0.2),
                   width: 0.5,
                 ),
               ),
@@ -327,7 +327,7 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
                   Text(
                     '${d.day}',
                     style: TextStyle(
-                      color: selected ? kWhite : kWhite.withOpacity(0.8),
+                      color: selected ? kWhite : kWhite.withValues(alpha: 0.8),
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                     ),
@@ -371,7 +371,7 @@ class _SlotsAvailabilityScreenState extends State<SlotsAvailabilityScreen> {
                     color: kPurpleMid,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: kPurpleLight.withOpacity(0.3),
+                      color: kPurpleLight.withValues(alpha: 0.3),
                       width: 0.5,
                     ),
                   ),

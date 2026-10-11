@@ -87,9 +87,9 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
                         vertical: 8,
                       ),
                       itemCount: _services.length,
-                      separatorBuilder: (_, __) => Container(
+                      separatorBuilder: (_, _) => Container(
                         height: 0.5,
-                        color: colors.purpleLight.withOpacity(0.2),
+                        color: colors.purpleLight.withValues(alpha: 0.2),
                       ),
                       itemBuilder: (ctx, i) => _OrderServiceTile(
                         service: _services[i],
@@ -221,7 +221,7 @@ class _ReviewOrderScreenState extends State<ReviewOrderScreen> {
       decoration: BoxDecoration(
         color: kPurpleMid,
         border: Border(
-          top: BorderSide(color: kPurpleLight.withOpacity(0.2), width: 0.5),
+          top: BorderSide(color: kPurpleLight.withValues(alpha: 0.2), width: 0.5),
         ),
       ),
       child: Column(
@@ -400,7 +400,7 @@ class _OrderServiceTile extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: kRed.withOpacity(0.15),
+                color: kRed.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: const Icon(

@@ -350,14 +350,14 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 18),
               decoration: BoxDecoration(
-                color: isSelected ? kPurpleAccent.withOpacity(0.3) : kPurpleMid,
+                color: isSelected ? kPurpleAccent.withValues(alpha: 0.3) : kPurpleMid,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: isSelected
                       ? kPurpleAccent
                       : isExpanded
-                      ? kPurpleLight.withOpacity(0.5)
-                      : kPurpleLight.withOpacity(0.15),
+                      ? kPurpleLight.withValues(alpha: 0.5)
+                      : kPurpleLight.withValues(alpha: 0.15),
                   width: isSelected ? 1.5 : 0.5,
                 ),
               ),
@@ -383,7 +383,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                 color: kPurpleMid,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: kPurpleLight.withOpacity(0.2),
+                  color: kPurpleLight.withValues(alpha: 0.2),
                   width: 0.5,
                 ),
               ),
@@ -451,7 +451,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
               border: Border.all(
                 color: isSlotSelected
                     ? colors.purpleAccent
-                    : colors.purpleLight.withOpacity(0.3),
+                    : colors.purpleLight.withValues(alpha: 0.3),
                 width: isSlotSelected ? 1.5 : 0.5,
               ),
             ),
@@ -511,14 +511,14 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 18),
               decoration: BoxDecoration(
-                color: isSelected ? kPurpleAccent.withOpacity(0.3) : kPurpleMid,
+                color: isSelected ? kPurpleAccent.withValues(alpha: 0.3) : kPurpleMid,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: isSelected
                       ? kPurpleAccent
                       : isExpanded
-                      ? kPurpleLight.withOpacity(0.5)
-                      : kPurpleLight.withOpacity(0.15),
+                      ? kPurpleLight.withValues(alpha: 0.5)
+                      : kPurpleLight.withValues(alpha: 0.15),
                   width: isSelected ? 1.5 : 0.5,
                 ),
               ),
@@ -544,7 +544,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                 color: kPurpleMid,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: kPurpleLight.withOpacity(0.2),
+                  color: kPurpleLight.withValues(alpha: 0.2),
                   width: 0.5,
                 ),
               ),
@@ -574,7 +574,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: isUnavailable
-                            ? kDisabled.withOpacity(0.3)
+                            ? kDisabled.withValues(alpha: 0.3)
                             : isSlotSelected
                             ? kPurpleAccent
                             : kPurpleDark,
@@ -584,7 +584,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                               ? kDisabled
                               : isSlotSelected
                               ? kPurpleAccent
-                              : kPurpleLight.withOpacity(0.3),
+                              : kPurpleLight.withValues(alpha: 0.3),
                           width: isSlotSelected ? 1.5 : 0.5,
                         ),
                       ),
@@ -635,7 +635,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
       decoration: BoxDecoration(
         color: kPurpleMid,
         border: Border(
-          top: BorderSide(color: kPurpleLight.withOpacity(0.2), width: 0.5),
+          top: BorderSide(color: kPurpleLight.withValues(alpha: 0.2), width: 0.5),
         ),
       ),
       child: Column(
@@ -675,7 +675,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: _canConfirm
                     ? kPurpleAccent
-                    : kPurpleAccent.withOpacity(0.4),
+                    : kPurpleAccent.withValues(alpha: 0.4),
                 foregroundColor: kWhite,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
@@ -733,7 +733,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: kPurpleLight.withOpacity(0.4),
+                color: kPurpleLight.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -744,7 +744,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: kPurpleAccent.withOpacity(0.2),
+                color: kPurpleAccent.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
                 border: Border.all(color: kPurpleAccent, width: 1.5),
               ),
@@ -791,7 +791,7 @@ class _BookingSlotsScreenState extends State<BookingSlotsScreen> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(sheetContext),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: kPurpleLight.withOpacity(0.4)),
+                      side: BorderSide(color: kPurpleLight.withValues(alpha: 0.4)),
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

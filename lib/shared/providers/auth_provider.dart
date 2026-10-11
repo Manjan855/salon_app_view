@@ -197,12 +197,7 @@ class AuthProvider with ChangeNotifier {
       );
 
       // 3. Trigger the native account selector window
-      final GoogleSignInAccount? googleUser = await googleSignIn.authenticate();
-      if (googleUser == null) {
-        _isLoading = false;
-        notifyListeners();
-        return false; // User cancelled the popup
-      }
+      final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
 
       // 4. Request explicit access tokens for the scopes we requested
       final authorization =
@@ -212,7 +207,7 @@ class AuthProvider with ChangeNotifier {
       final idToken = googleUser.authentication.idToken;
       final accessToken = authorization.accessToken;
 
-      if (idToken == null || accessToken == null) {
+      if (idToken == null) {
         throw const AuthException(
           'Missing security tokens from Google Authentication.',
         );

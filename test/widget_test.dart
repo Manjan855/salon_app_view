@@ -1,31 +1,31 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+// Smoke tests for the startup-failure screen. `main()` renders this when the
+// compile-time Supabase config is missing or invalid, so it must build with no
+// platform channels, network, or `Supabase.initialize()`.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-//import 'package:salon_app_view/main.dart';
-import 'package:salon_app_view/run_app.dart';
+import 'package:salon_app_view/app_env.dart';
+import 'package:salon_app_view/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const RunApp());
+  testWidgets('StartupErrorApp shows the reason and the run command', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const StartupErrorApp(message: 'Missing config'));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.text('Could not start the app'), findsOneWidget);
+    expect(find.text('Missing config'), findsOneWidget);
+    expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
+    expect(
+      find.text('flutter run --dart-define-from-file=config/supabase.json'),
+      findsOneWidget,
+    );
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('StartupErrorApp surfaces AppEnv.missingConfigHint', (
+    tester,
+  ) async {
+    await tester.pumpWidget(StartupErrorApp(message: AppEnv.missingConfigHint));
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text(AppEnv.missingConfigHint), findsOneWidget);
   });
 }
