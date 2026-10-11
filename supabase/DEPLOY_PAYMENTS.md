@@ -44,6 +44,16 @@ is still honoured as an override if you ever want to set one.)
    ```
 
    (open the file, `Ctrl+A`, `Ctrl+C`, paste — do not paste the file path.)
+
+   > **Do not edit any line of the pasted code.** In particular, leave
+   > `const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";` exactly as it
+   > is. `SUPABASE_URL` is injected automatically by Supabase and already holds
+   > your project root (`https://zhnfhkahspsqbfjetwlt.supabase.co`). Do **not**
+   > try to "help" by pasting the function URL into it — `Deno.env.get` takes a
+   > variable *name*, not a URL, so it would become `""` and every checkout URL
+   > would break (`/functions/v1/payments/functions/v1/payments/…`). The full
+   > function URL appears later in this guide **only** as something to open in a
+   > browser to verify the deploy (Part 3) — it never goes inside the code.
 5. **Turn OFF JWT verification for this function.** This is required: eSewa and
    Khalti redirect the *user's browser* to `/callback/…` with no Supabase JWT,
    and the gateway would reject them with `401`.
@@ -93,6 +103,9 @@ Paste into a browser:
 ```
 https://zhnfhkahspsqbfjetwlt.supabase.co/functions/v1/payments
 ```
+
+> This URL is a **browser check only**. Never paste it into the function code
+> (see the warning in Part 1, step 4).
 
 Expected:
 

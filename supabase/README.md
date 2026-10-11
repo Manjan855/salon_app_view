@@ -75,6 +75,22 @@ back — the database is left untouched and the script can be re-run as-is.
 
 Afterwards, run the verification query at the bottom of this file.
 
+**Quick live check (both the schema *and* the payments function):**
+
+```bash
+bash tool/check_backend.sh
+```
+
+It reads `config/supabase.json` and prints a pass/fail for the
+`services.gender` migration and the `payments` Edge Function — handy because a
+SQL-editor "Success" message can appear even when a step did not stick.
+
+> **A SQL-editor "Success. No rows returned" is not proof the migration ran.**
+> Always confirm with `bash tool/check_backend.sh` (or the query below). If
+> migration 7 reports pending, paste the **contents** of
+> `migrations/20261006000006_service_gender.sql` (or the whole
+> `apply_all.sql`) and re-check.
+
 ### Manual (8 separate runs)
 
 Run these one at a time, in order:
@@ -206,8 +222,9 @@ including verification commands and a troubleshooting table — is in
 At a glance:
 
 1. **Deploy** — Dashboard → Edge Functions → *Deploy a new function* → *Via
-   Editor* → name it exactly `payments` → paste
-   `supabase/functions/payments/index.ts`.
+   Editor* → name it exactly `payments` → paste the **contents** of
+   `supabase/functions/payments/index.ts` unchanged (do not edit
+   `SUPABASE_URL` — it is auto-injected).
 2. **Disable JWT verification** on the function (provider callbacks carry no
    JWT). `/initiate` still validates the caller’s user token itself.
 3. **Set secrets** — Dashboard → Edge Functions → Secrets:
@@ -280,7 +297,10 @@ eSewa sandbox test wallet: id `9711111111` / password `Nepal@123` / OTP `123456`
       Dashboard, turn JWT verification **off**, and set the payment secrets.
       Until this is done the function is not reachable — `/initiate` returns
       404. No manual `sb_secret_…` copy is required (Supabase auto-injects
-      `SUPABASE_SECRET_KEYS`).
+      `SUPABASE_SECRET_KEYS`). **Paste the file contents unchanged and never
+      edit `SUPABASE_URL`** (it is auto-injected as the project root; the
+      function URL is only for the browser check). Confirm with
+      `bash tool/check_backend.sh`.
 - [x] **Rebuild the booking funnel on real data** — **done for the
       services → slots → booking → appointment path.** The entrance lists
       (Home "Salons near you" and Explore) now read live rows from
@@ -318,6 +338,9 @@ eSewa sandbox test wallet: id `9711111111` / password `Nepal@123` / OTP `123456`
       The Home "Services for Men / Women" tiles now jump into Explore with the
       matching Gender filter preselected instead of doing nothing, and an
       empty-filter state explains why nothing matched.
+      **Live projects must apply migration 7** (`20261006000006_service_gender.sql`)
+      for the facet data to exist; until then the code degrades to "Unisex
+      only". Verify with `bash tool/check_backend.sh`.
 - [ ] **Drop the archived legacy schema** after launch:
       `drop schema archive cascade;` — removes the old hand-made tables for
       good (nothing is currently lost by leaving it in place).
