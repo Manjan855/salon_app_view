@@ -1,4 +1,6 @@
 {
   "SUPABASE_URL": "https://YOUR-PROJECT-REF.supabase.co",
-  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_YOUR_PUBLISHABLE_KEY"
+  "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_YOUR_PUBLISHABLE_KEY",
+  "GOOGLE_SERVER_CLIENT_ID": "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
+  "GOOGLE_IOS_CLIENT_ID": "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com"
 }

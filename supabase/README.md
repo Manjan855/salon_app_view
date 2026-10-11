@@ -283,10 +283,15 @@ eSewa sandbox test wallet: id `9711111111` / password `Nepal@123` / OTP `123456`
       any redirect that is not listed, so the link above only starts working
       after this dashboard step (same hands-on step as the key flip).
       **Done:** saved in the Supabase dashboard.
-- [ ] Set a real Google `serverClientId` for production — Android also needs
-      that value as `defaultWebClientId`, iOS needs `GIDClientID` plus the
-      client ID's reversed form (`com.googleusercontent.apps.<CLIENT_ID>`)
-      as a `CFBundleURLSchemes` entry
+- [x] **Move the Google `serverClientId` out of source** — **done:** the web
+      client ID is now injected via `config/supabase.json`
+      (`GOOGLE_SERVER_CLIENT_ID` → `AppEnv.googleServerClientId`), with a clear
+      error when missing; `test/google_signin_test.dart` guards the wiring.
+- [ ] **Finish Google Sign-In for production** — create the Android / iOS / Web
+      OAuth clients, register the **release** keystore SHA-1, paste the iOS ids
+      into `Info.plist` (`GIDClientID` + reversed `CFBundleURLSchemes`), and
+      enable the Google provider in Supabase Auth. Exact steps, identifiers and
+      the copy-paste `Info.plist` block: [`docs/google_signin.md`](../docs/google_signin.md).
 - [x] Wire eSewa / Khalti merchant credentials through an edge function so
       `payments.status` can never be flipped by a client — **done:**
       `supabase/functions/payments/index.ts` (see *Payments Edge Function*

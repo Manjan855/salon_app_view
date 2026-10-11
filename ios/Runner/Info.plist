@@ -41,7 +41,29 @@
 				<string>salonappview</string>
 			</array>
 		</dict>
+		<!-- Google Sign-In (iOS). Uncomment this dict and replace the placeholder
+		     with the REVERSED_CLIENT_ID of your iOS OAuth client — that is the
+		     part of the client ID before ".apps.googleusercontent.com", prefixed
+		     with "com.googleusercontent.apps.". Required on iOS even when the
+		     client ID is passed in Dart. See docs/google_signin.md.
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.REPLACE_WITH_IOS_CLIENT_ID</string>
+			</array>
+		</dict>
+		-->
 	</array>
+	<!-- Google Sign-In client IDs (iOS). Uncomment and replace both values; keep
+	     them identical to GOOGLE_IOS_CLIENT_ID / GOOGLE_SERVER_CLIENT_ID in
+	     config/supabase.json. See docs/google_signin.md.
+	<key>GIDClientID</key>
+	<string>REPLACE_WITH_IOS_CLIENT_ID.apps.googleusercontent.com</string>
+	<key>GIDServerClientID</key>
+	<string>REPLACE_WITH_WEB_CLIENT_ID.apps.googleusercontent.com</string>
+	-->
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

@@ -42,6 +42,26 @@ class AppEnv {
   /// 302s to this link.
   static const String paymentResultUrl = 'salonappview://payment-result';
 
+  /// Google OAuth **web** client ID (a.k.a. the "server client ID"). Android's
+  /// Credential Manager flow returns an ID token whose audience (`aud`) is this
+  /// client, and `signInWithIdToken` verifies it. Required on Android when the
+  /// app does not ship a `google-services.json` — this project does not.
+  ///
+  /// Injected with the same `--dart-define-from-file=config/supabase.json` as
+  /// the Supabase keys. See `docs/google_signin.md` for the Google Cloud setup.
+  static const String googleServerClientId =
+      String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+
+  /// Google OAuth **iOS** client ID. The iOS plugin reads it from
+  /// `Info.plist` (`GIDClientID`) and its reversed form
+  /// (`com.googleusercontent.apps.…`) from `CFBundleURLSchemes`; this constant
+  /// exists so a test can assert the plist stays in sync with the build config.
+  static const String googleIosClientId =
+      String.fromEnvironment('GOOGLE_IOS_CLIENT_ID');
+
+  /// True when a Google web/server client ID was injected.
+  static const bool hasGoogleServerClientId = googleServerClientId != '';
+
   /// True once both values were injected at build/run time.
   static const bool isConfigured =
       supabaseUrl != '' && supabasePublishableKey != '';

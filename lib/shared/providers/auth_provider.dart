@@ -190,10 +190,17 @@ class AuthProvider with ChangeNotifier {
       final scopes = ['email', 'profile'];
       final GoogleSignIn googleSignIn = GoogleSignIn.instance;
 
-      // 2. Initialize using the new 7.x package standard (serverClientId replaces webClientId)
+      // 2. Initialize using the google_sign_in 7.x API. The web/server client
+      //    ID is injected at build time (config/supabase.json -> AppEnv), never
+      //    hardcoded in source. See docs/google_signin.md.
+      if (!AppEnv.hasGoogleServerClientId) {
+        throw const AuthException(
+          'Google Sign-In is not configured on this build '
+          '(GOOGLE_SERVER_CLIENT_ID is missing).',
+        );
+      }
       await googleSignIn.initialize(
-        serverClientId:
-            '940621050374-ilktvg4m4u01tgs390iru8fgquv2tc09.apps.googleusercontent.com',
+        serverClientId: AppEnv.googleServerClientId,
       );
 
       // 3. Trigger the native account selector window

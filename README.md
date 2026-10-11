@@ -28,6 +28,13 @@ flutter build apk --dart-define-from-file=config/supabase.json
 If you forget the flag the app throws a clear `StateError` instead of failing
 with a cryptic 401.
 
+## Google Sign-In
+
+The Google web client ID is injected the same way
+(`GOOGLE_SERVER_CLIENT_ID` in `config/supabase.json`). To create the OAuth
+clients, register the Android package + SHA-1, and fill in the iOS
+`Info.plist`, follow [`docs/google_signin.md`](docs/google_signin.md).
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
