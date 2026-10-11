@@ -35,6 +35,14 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
   bool get _isOnline =>
       _selectedPayment == 'esewa' || _selectedPayment == 'khalti';
 
+  @override
+  void initState() {
+    super.initState();
+    // Probe whether the `payments` Edge Function is live so the UI can
+    // pre-emptively point users at "Pay at salon" while it is not deployed.
+    context.read<PaymentProvider>().checkDeployment();
+  }
+
   Future<void> _continue() async {
     if (_selectedPayment == 'cash') {
       Navigator.push(
@@ -46,6 +54,20 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
           ),
         ),
       );
+      return;
+    }
+
+    // Belt & braces: the wallet tiles are disabled below, but guard anyway in
+    // case the deployment probe finished after the user tapped.
+    if (context.read<PaymentProvider>().notDeployed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Online payment is not available yet — please pay at the salon.',
+          ),
+        ),
+      );
+      setState(() => _selectedPayment = null);
       return;
     }
 
@@ -97,6 +119,10 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
     final kPurpleLight = colors.purpleLight;
     final kWhite = colors.white;
     final kTextMuted = colors.textMuted;
+
+    final payments = context.watch<PaymentProvider>();
+    final notDeployed = payments.notDeployed && !payments.checkingDeployment;
+    final onlineUnavailable = widget.bookingId == null || notDeployed;
 
     return Scaffold(
       backgroundColor: kPurpleDark,
@@ -175,6 +201,43 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ── Not-deployed banner ────────────────
+                    if (notDeployed) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.amber.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.info_outline_rounded,
+                              color: Colors.amber,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Online payment is not set up on this build '
+                                'yet — you can pay at the salon.',
+                                style: TextStyle(
+                                  color: kWhite,
+                                  fontSize: 12,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
                     // ── Total amount ──────────────────────
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -221,7 +284,7 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                         Icons.account_balance_wallet_outlined,
                       ],
                       isSelected: _selectedPayment == 'esewa',
-                      enabled: widget.bookingId != null,
+                      enabled: !onlineUnavailable,
                       onTap: () => setState(() => _selectedPayment = 'esewa'),
                     ),
 
@@ -232,14 +295,17 @@ class _PaymentOptionsScreenState extends State<PaymentOptionsScreen> {
                       methodLabel: 'Wallet',
                       methodIcons: const [Icons.payments_outlined],
                       isSelected: _selectedPayment == 'khalti',
-                      enabled: widget.bookingId != null,
+                      enabled: !onlineUnavailable,
                       onTap: () => setState(() => _selectedPayment = 'khalti'),
                     ),
 
-                    if (widget.bookingId == null) ...[
+                    if (onlineUnavailable) ...[
                       const SizedBox(height: 8),
                       Text(
-                        'Save the appointment first to pay online.',
+                        widget.bookingId == null
+                            ? 'Save the appointment first to pay online.'
+                            : 'Online payment is not available yet — '
+                                'pay at the salon instead.',
                         style: TextStyle(color: kTextMuted, fontSize: 11),
                       ),
                     ],

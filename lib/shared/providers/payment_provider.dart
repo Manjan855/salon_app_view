@@ -9,23 +9,48 @@ import '../../repositories/payment_repository.dart';
 /// The browser eventually bounces back to `salonappview://payment-result`; that
 /// link is handled once, centrally, in `run_app.dart`.
 class PaymentProvider with ChangeNotifier {
-  final PaymentRepository _repo = PaymentRepository();
+  PaymentProvider({PaymentRepository? repository})
+      : _repo = repository ?? PaymentRepository();
+
+  final PaymentRepository _repo;
 
   bool _isStarting = false;
   String? _error;
   String? _activeProvider;
   bool _notDeployed = false;
+  bool _checkingDeployment = false;
 
   /// True while the initiate call / browser launch is in flight.
   bool get isStarting => _isStarting;
   String? get error => _error;
 
-  /// True when the last failure was a missing `payments` function (HTTP 404),
-  /// i.e. the function has not been deployed yet.
+  /// True when the last probe says the `payments` function is missing (HTTP
+  /// 404) — either from [checkDeployment] or from a failed checkout attempt.
   bool get notDeployed => _notDeployed;
+
+  /// True while the one-off startup probe in [checkDeployment] is running.
+  bool get checkingDeployment => _checkingDeployment;
 
   /// 'esewa' | 'khalti' while a checkout is being started.
   String? get activeProvider => _activeProvider;
+
+  /// Probes the `payments` Edge Function once (called when the payment screen
+  /// opens) so the UI can steer the user to "Pay at salon" right away instead
+  /// of failing only after they tap a wallet.
+  Future<void> checkDeployment() async {
+    if (_checkingDeployment) return;
+    _checkingDeployment = true;
+    notifyListeners();
+    try {
+      _notDeployed = !await _repo.isDeployed();
+    } catch (_) {
+      // Network errors are not "not deployed" — keep the previous state and
+      // never pre-emptively block payments on an unknown outcome.
+    } finally {
+      _checkingDeployment = false;
+      notifyListeners();
+    }
+  }
 
   void clearError() {
     _error = null;

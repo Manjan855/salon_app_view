@@ -81,7 +81,26 @@ bool _functionMissing(int status, dynamic details) =>
 /// Talks to the `payments` Edge Function. The function owns every
 /// money-related write; this repository only starts a checkout.
 class PaymentRepository {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  /// Resolved lazily so repository subclasses used in unit tests can be
+  /// constructed without a live Supabase instance.
+  SupabaseClient get _supabase => Supabase.instance.client;
+
+  /// True when the `payments` Edge Function is deployed and answering on its
+  /// base route (`{ok:true}`). A platform 404 means "not deployed"; anything
+  /// else (including a 5xx from the function itself) means "deployed".
+  /// Network failures propagate so callers can treat the result as "unknown".
+  Future<bool> isDeployed() async {
+    try {
+      final response = await _supabase.functions.invoke('payments');
+      final data = response.data;
+      if (data is Map && data['ok'] == true) return true;
+      return response.status < 400;
+    } on FunctionException catch (e) {
+      // The function's own errors still prove it is reachable/deployed;
+      // only the platform's "no such function" 404 means it is missing.
+      return e.status != 404;
+    }
+  }
 
   /// Creates a `pending` payment for [bookingId] and returns the public
   /// checkout URL to open in the browser.
