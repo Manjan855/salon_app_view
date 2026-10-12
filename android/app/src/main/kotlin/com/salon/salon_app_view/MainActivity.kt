@@ -1,4 +1,4 @@
-package com.example.salon_app_view
+package com.salon.salon_app_view
 
 import io.flutter.embedding.android.FlutterActivity
 

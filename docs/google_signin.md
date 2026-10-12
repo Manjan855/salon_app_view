@@ -15,14 +15,14 @@ as the `serverClientId` at runtime — and that value now comes from
 
 App identifiers this project registers:
 
-- Android package / namespace: **`com.example.salon_app_view`**
+- Android package / namespace: **`com.salon.salon_app_view`**
   (`android/app/build.gradle.kts`)
-- iOS bundle id: **`com.example.salonAppView`**
+- iOS bundle id: **`com.salon.salonAppView`**
   (`ios/Runner.xcodeproj/project.pbxproj`)
 
-> Rename the `com.example.*` ids before a real release; if you do, update the
-> two values above in Google Cloud Console to match, or Google sign-in breaks
-> with `clientConfigurationError`.
+> The placeholder `com.example.*` ids have been swapped for `com.salon.*`. If
+> you rename them again, register the new package / bundle id in Google Cloud
+> Console to match, or Google sign-in breaks with `clientConfigurationError`.
 
 ---
 
@@ -33,7 +33,7 @@ Open <https://console.cloud.google.com/apis/credentials> → **Create credential
 
 ### a. Android
 - Type: **Android**
-- Package name: `com.example.salon_app_view`
+- Package name: `com.salon.salon_app_view`
 - SHA-1: your keystore fingerprint (see below) — add **one per build type**.
 
 Get the SHA-1:
@@ -49,7 +49,7 @@ a `clientConfigurationError` / spurious `canceled`).
 
 ### b. iOS
 - Type: **iOS**
-- Bundle ID: `com.example.salonAppView`
+- Bundle ID: `com.salon.salonAppView`
 
 The client ID it gives you is `…apps.googleusercontent.com`. This is the
 **iOS client ID**.

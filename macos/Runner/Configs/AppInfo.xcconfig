@@ -8,7 +8,7 @@
 PRODUCT_NAME = salon_app_view
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.salonAppView
+PRODUCT_BUNDLE_IDENTIFIER = com.salon.salonAppView
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.salon. All rights reserved.
