@@ -54,7 +54,10 @@ gend=$(curl -s "$URL/rest/v1/services?select=gender&limit=1" \
         -H "apikey: $KEY" -H "Authorization: Bearer $KEY" 2>/dev/null || echo '')
 case "$gend" in
   *"does not exist"*)
-    echo "    X  NOT APPLIED — run supabase/migrations/20261006000006_service_gender.sql";;
+    echo "    X  NOT APPLIED — open supabase/migrations/20261006000006_service_gender.sql,"
+    echo "       copy the WHOLE file contents (not the path) into the SQL editor and run it."
+    echo "       A correct run returns exactly 1 row (men / women / unisex / total_services);"
+    echo "       'Success. No rows returned' means it did not run. Then re-run this script.";;
   \[*)
     echo "    OK APPLIED"
     dist=$(curl -s "$URL/rest/v1/services?select=gender" \

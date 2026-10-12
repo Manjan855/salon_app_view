@@ -1188,10 +1188,15 @@ create index if not exists services_gender_idx
   on public.services (gender) where is_active;
 
 -- ---- verification ------------------------------------------------------------
-select s.gender, count(*)
-  from public.services s
- group by s.gender
- order by 1;
+-- Returns exactly one row, always. If the SQL editor says
+-- "Success. No rows returned" after pasting this file, the script did NOT run —
+-- paste the whole file contents again (not the path, not a selection).
+select
+  count(*) filter (where gender = 'men')    as men,
+  count(*) filter (where gender = 'women')  as women,
+  count(*) filter (where gender = 'unisex') as unisex,
+  count(*)                                  as total_services
+from public.services;
 
 -- ==========================================================================
 -- FILE: supabase/seed.sql

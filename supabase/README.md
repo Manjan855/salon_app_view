@@ -86,8 +86,12 @@ It reads `config/supabase.json` and prints a pass/fail for the
 SQL-editor "Success" message can appear even when a step did not stick.
 
 > **A SQL-editor "Success. No rows returned" is not proof the migration ran.**
-> Always confirm with `bash tool/check_backend.sh` (or the query below). If
-> migration 7 reports pending, paste the **contents** of
+> The migration file ends with a query that **always returns exactly one row**
+> (`men / women / unisex / total_services`). If you don't see that row, the DDL
+> did not execute — typically because the file *path* was pasted, only part of
+> the text was selected, or the wrong project/branch was active. Always confirm
+> with `bash tool/check_backend.sh` (or the query below). If migration 7 reports
+> pending, paste the **contents** of
 > `migrations/20261006000006_service_gender.sql` (or the whole
 > `apply_all.sql`) and re-check.
 
