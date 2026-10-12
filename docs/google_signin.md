@@ -169,22 +169,31 @@ enabled, and the exact values to register in Google Cloud Console.
 |---|---|
 | "an unexpected error occurred" right after picking an account | the old, generic catch-all; the reason is now surfaced (row below) |
 | app: *"Google Sign-In is misconfigured for this app: the Android package name + SHA-1 …"* / log: `GoogleSignInExceptionCode.clientConfigurationError` | wrong package/bundle id, or SHA-1 not registered — the classic fallout of renaming the app id (`com.example.*` → `com.salon.*`) |
-| app/log: `[28444] developer console is not set up correctly` | exactly the same root cause — Google found **no Android OAuth client** for this package + SHA-1, or the Android client lives in a **different Google Cloud project** than the web client used as `serverClientId` |
+| app/log: `[28444] developer console is not set up correctly` | no Android OAuth client matches this package + SHA-1, **or** the Android client sits in a different Google Cloud project than the web client |
+| `[28444]` even though the Android client clearly exists | the Android client is in a *different project* than the web client, the registered SHA-1 is stale (debug keystore was regenerated), or Play services cached the failure — see the note below |
 | unexpected `canceled` right after picking an account | usually the same config error (Credential Manager masks it) |
 | works in debug, fails in release | release keystore SHA-1 not registered |
 | `Google Sign-In is not configured on this build` | `GOOGLE_SERVER_CLIENT_ID` missing from the dart-define file |
 | `Missing security tokens from Google Authentication.` | the web client id was not honoured as `serverClientId` — check `config/supabase.json` |
 
-> **"\<package\> and SHA-1 already exist" when creating the Android client?**
-> That means an Android client with those exact values is already registered — in
-> whichever project is selected. Don't create a duplicate. Instead confirm:
+> **Seeing "\<package\> and SHA-1 already exist" when creating the Android
+> client?** The Android client is already registered — don't create a duplicate.
+> Find out *where* it lives with one test:
 >
-> 1. the selected project number equals the one in the web client ID
->    (`940621050374` in this project), and
-> 2. that existing Android client's package is `com.salon.salon_app_view` and its
->    SHA-1 matches `tool/google_signin_check.sh`.
+> **Is the web client (`940621050374-…`) listed on the same Credentials page as
+> the Android client?**
 >
-> If both are right, `[28444]` is usually just cached per app by Google Play
-> services: force-stop the app, clear **Google Play services** cache
-> (Settings → Apps → Google Play services → Storage → Clear cache), uninstall +
-> reinstall the app, and give Google a few minutes to propagate a new client.
+> - **Same page →** the registration is correct, and `[28444]` is Google Play
+>   services caching the failure per app: force-stop the app, clear **Google Play
+>   services** cache (Settings → Apps → Google Play services → Storage → Clear
+>   cache), uninstall + reinstall, and wait a few minutes.
+> - **Not on the same page →** the Android client is in a *different* Google
+>   Cloud project than the web client, which can never work. Delete it there
+>   (pending deletion is fine) and create it in the project that lists the web
+>   client.
+>
+> **Re-read the SHA-1 with `./gradlew signingReport` every time.** The debug
+> keystore — and therefore its SHA-1 — can be regenerated (e.g. by Android
+> Studio or a fresh machine), silently invalidating a value you registered
+> earlier. That alone produces this exact error. `tool/google_signin_check.sh`
+> always prints the current value to compare against the console.
