@@ -52,9 +52,11 @@ if [ -f "$cfg" ]; then
   key="$(sed -n 's/.*"SUPABASE_PUBLISHABLE_KEY"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$cfg")"
   echo "Web/server client : ${web:-<MISSING>}"
   echo "iOS client        : ${ios:-<MISSING>}"
+  proj="$(printf '%s' "$web" | sed -n 's/^\([0-9][0-9]*\)-.*/\1/p')"
+  echo "Project number    : ${proj:-<unknown>}  (create the Android client HERE)"
 else
   echo "  config/supabase.json not found"
-  web=""; url=""; key=""
+  web=""; url=""; key=""; proj=""
 fi
 
 # --- Supabase provider -------------------------------------------------------
@@ -84,6 +86,10 @@ the web client above, then create/verify:
   1. Android OAuth client
        Package name : ${android_id:-<android package>}
        SHA-1        : (each fingerprint listed above)
+       Project      : ${proj:-<same project as the web client>}
+         ^ the client MUST be created in this project. An Android client in a
+           different project fails with [28444] "developer console is not set up
+           correctly" even when the package name and SHA-1 are correct.
   2. iOS OAuth client  (iOS builds only)
        Bundle ID    : ${ios_id:-<ios bundle id>}
   3. Web application client (already used by Supabase — leave as-is)

@@ -61,6 +61,12 @@ The client ID it gives you is `…apps.googleusercontent.com`. This is the
 Its client ID is the **web client ID** (this is the important one — it is used
 by Android, iOS and Supabase).
 
+> **All three clients must live in the same Google Cloud project.** An Android
+> client created in a different project than the web client fails with
+> `[28444] developer console is not set up correctly` even when the package name
+> and SHA-1 are correct. The project number is the digits before the first `-`
+> in the web client ID (e.g. `940621050374-…` → project `940621050374`).
+
 ---
 
 ## 2. Put the values in the local config
@@ -163,6 +169,7 @@ enabled, and the exact values to register in Google Cloud Console.
 |---|---|
 | "an unexpected error occurred" right after picking an account | the old, generic catch-all; the reason is now surfaced (row below) |
 | app: *"Google Sign-In is misconfigured for this app: the Android package name + SHA-1 …"* / log: `GoogleSignInExceptionCode.clientConfigurationError` | wrong package/bundle id, or SHA-1 not registered — the classic fallout of renaming the app id (`com.example.*` → `com.salon.*`) |
+| app/log: `[28444] developer console is not set up correctly` | exactly the same root cause — Google found **no Android OAuth client** for this package + SHA-1, or the Android client lives in a **different Google Cloud project** than the web client used as `serverClientId` |
 | unexpected `canceled` right after picking an account | usually the same config error (Credential Manager masks it) |
 | works in debug, fails in release | release keystore SHA-1 not registered |
 | `Google Sign-In is not configured on this build` | `GOOGLE_SERVER_CLIENT_ID` missing from the dart-define file |
