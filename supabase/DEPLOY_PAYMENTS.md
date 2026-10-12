@@ -131,7 +131,7 @@ Expected:
 ```
 
 - `404` → function not deployed, or the name isn’t exactly `payments`.
-- `503` with `"missing SB_SECRET_KEY"` → deployed, but the admin key didn’t
+- `503` with `"has no admin key"` → deployed, but the admin key didn’t
   resolve (see Part 5).
 
 ### 3b. `/initiate` with no token → should be 401
@@ -180,7 +180,7 @@ You want the newest row: `status = paid` and `payment_status = paid`.
 |---|---|---|
 | Base URL `404` | Not deployed, or wrong function name | Re-deploy; the name must be exactly `payments` |
 | `/initiate` returns `401` from the **app** (not curl) | User session expired | Sign out/in and retry |
-| `503 {"error":"Payments function is missing SB_SECRET_KEY"}` | Admin key didn’t resolve | Confirm your project has the auto-injected key by redeploying; or create a secret key (Settings → API Keys → Create new secret key) and set it as the function secret `SB_SECRET_KEY` |
+| `503 {"error":"Payments function has no admin key …"}` | Admin key didn’t resolve | Confirm your project has the auto-injected key by redeploying; or create a secret key (Settings → API Keys → Create new secret key) and set it as the function secret `SB_SECRET_KEY` |
 | eSewa/Khalti callback ends in `401` | JWT verification is still ON | Function → Settings → turn **Verify JWT** off |
 | `{"error":"Khalti is not configured (KHALTI_SECRET_KEY missing)"}` | No Khalti key set | Set `KHALTI_SECRET_KEY`, or test eSewa instead |
 | Editor underlines `Deno` in `index.ts` | VS Code TS server, not a runtime error | Install the Deno extension (see *Editor red squiggles* above); deploy is unaffected |
