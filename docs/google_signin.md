@@ -174,3 +174,17 @@ enabled, and the exact values to register in Google Cloud Console.
 | works in debug, fails in release | release keystore SHA-1 not registered |
 | `Google Sign-In is not configured on this build` | `GOOGLE_SERVER_CLIENT_ID` missing from the dart-define file |
 | `Missing security tokens from Google Authentication.` | the web client id was not honoured as `serverClientId` — check `config/supabase.json` |
+
+> **"\<package\> and SHA-1 already exist" when creating the Android client?**
+> That means an Android client with those exact values is already registered — in
+> whichever project is selected. Don't create a duplicate. Instead confirm:
+>
+> 1. the selected project number equals the one in the web client ID
+>    (`940621050374` in this project), and
+> 2. that existing Android client's package is `com.salon.salon_app_view` and its
+>    SHA-1 matches `tool/google_signin_check.sh`.
+>
+> If both are right, `[28444]` is usually just cached per app by Google Play
+> services: force-stop the app, clear **Google Play services** cache
+> (Settings → Apps → Google Play services → Storage → Clear cache), uninstall +
+> reinstall the app, and give Google a few minutes to propagate a new client.
