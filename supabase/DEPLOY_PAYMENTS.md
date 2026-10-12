@@ -24,6 +24,23 @@ is still honoured as an override if you ever want to set one.)
 
 ---
 
+## Editor red squiggles in `index.ts`? (not a bug)
+
+`index.ts` is Deno; the rest of the repo is Flutter/Dart. A plain VS Code
+TypeScript server doesn't know the `Deno` global, so it underlines `Deno`,
+`crypto`, `fetch`, … with *"Cannot find name …"*. The hosted runtime is always
+Deno, so **deployment is unaffected** — it is editor-only.
+
+Fix it once:
+
+1. Install the **Deno** VS Code extension (`denoland.vscode-deno`).
+2. Reload the window. `.vscode/settings.json` already enables the Deno language
+   server for `supabase/functions` only and points at
+   `supabase/functions/deno.json`, so the error clears without affecting the
+   Dart side of the project.
+
+---
+
 ## Part 1 — Deploy the function
 
 1. Open **Edge Functions**:
@@ -166,6 +183,7 @@ You want the newest row: `status = paid` and `payment_status = paid`.
 | `503 {"error":"Payments function is missing SB_SECRET_KEY"}` | Admin key didn’t resolve | Confirm your project has the auto-injected key by redeploying; or create a secret key (Settings → API Keys → Create new secret key) and set it as the function secret `SB_SECRET_KEY` |
 | eSewa/Khalti callback ends in `401` | JWT verification is still ON | Function → Settings → turn **Verify JWT** off |
 | `{"error":"Khalti is not configured (KHALTI_SECRET_KEY missing)"}` | No Khalti key set | Set `KHALTI_SECRET_KEY`, or test eSewa instead |
+| Editor underlines `Deno` in `index.ts` | VS Code TS server, not a runtime error | Install the Deno extension (see *Editor red squiggles* above); deploy is unaffected |
 | Checkout page says “Link expired” | You opened the old checkout URL after 60 min | Start the payment again from the app |
 | App shows “Payment was not completed” | Provider status wasn’t `COMPLETE`/`Completed` or the amount didn’t match | Re-test; check the `payments.provider_payload` column for the provider response |
 

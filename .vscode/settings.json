@@ -1,3 +1,11 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    // Supabase Edge Functions are Deno, the rest of the repo is Flutter/Dart.
+    // Enable the Deno language server for the functions folder only, so the
+    // `Deno` global, Web APIs and `npm:` imports in index.ts resolve in the
+    // editor. Requires the "Deno" VS Code extension (denoland.vscode-deno).
+    "deno.enablePaths": [
+        "supabase/functions"
+    ],
+    "deno.config": "supabase/functions/deno.json"
 }

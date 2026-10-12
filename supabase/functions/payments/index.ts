@@ -2,6 +2,13 @@
 // payments — eSewa / Khalti checkout for salon bookings
 // =============================================================================
 //
+// Editor note: this file is Deno, the rest of the repo is Flutter/Dart. If your
+// editor underlines `Deno` / `crypto` / `fetch` with "Cannot find name", enable
+// the Deno language server for this folder (already configured in
+// `.vscode/settings.json` + `supabase/functions/deno.json`) by installing the
+// "Deno" VS Code extension (denoland.vscode-deno). None of that is needed to
+// deploy — the hosted runtime is always Deno.
+//
 // One deployable Edge Function that owns the whole Nepal payment handshake:
 //
 //   POST  /functions/v1/payments/initiate          (app → here, user JWT)
