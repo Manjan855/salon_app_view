@@ -206,13 +206,20 @@ class AuthProvider with ChangeNotifier {
       // 3. Trigger the native account selector window
       final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
 
-      // 4. Request explicit access tokens for the scopes we requested
-      final authorization =
-          await googleUser.authorizationClient.authorizationForScopes(scopes) ??
-          await googleUser.authorizationClient.authorizeScopes(scopes);
+      // 4. Request an OAuth access token for the scopes we asked for. This is
+      //    best-effort: Supabase verifies the ID token, so a scope-grant
+      //    failure must not sink an otherwise successful sign-in.
+      String? accessToken;
+      try {
+        final authorization = await googleUser.authorizationClient
+                .authorizationForScopes(scopes) ??
+            await googleUser.authorizationClient.authorizeScopes(scopes);
+        accessToken = authorization.accessToken;
+      } catch (_) {
+        accessToken = null;
+      }
 
       final idToken = googleUser.authentication.idToken;
-      final accessToken = authorization.accessToken;
 
       if (idToken == null) {
         throw const AuthException(
@@ -227,24 +234,52 @@ class AuthProvider with ChangeNotifier {
         accessToken: accessToken,
       );
 
-      if (response.user != null) {
-        _user = response.user;
-        _isLoading = false;
-        notifyListeners();
-        return true;
-      }
-
-      return false;
+      _user = response.user ?? _user;
+      _isLoading = false;
+      notifyListeners();
+      return response.user != null;
     } on AuthException catch (e) {
       _error = e.message;
       _isLoading = false;
       notifyListeners();
       return false;
-    } catch (e) {
-      _error = "An unexpected error occurred during Google Sign-In.";
+    } on GoogleSignInException catch (e) {
+      _error = _describeGoogleSignInError(e);
       _isLoading = false;
       notifyListeners();
       return false;
+    } catch (e) {
+      _error = 'Google Sign-In failed: $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Maps an opaque [GoogleSignInException] onto an actionable message. The
+  /// `clientConfigurationError` case almost always means the Android package
+  /// name + SHA-1 (or the iOS bundle id) is not registered in Google Cloud
+  /// Console — see docs/google_signin.md.
+  static String _describeGoogleSignInError(GoogleSignInException e) {
+    final detail = e.description == null ? '' : '\n${e.description}';
+    switch (e.code) {
+      case GoogleSignInExceptionCode.canceled:
+        return 'Google Sign-In was cancelled.';
+      case GoogleSignInExceptionCode.clientConfigurationError:
+        return 'Google Sign-In is misconfigured for this app: the Android '
+            'package name + SHA-1 (or iOS bundle id) are not registered in '
+            'Google Cloud Console. See docs/google_signin.md.$detail';
+      case GoogleSignInExceptionCode.providerConfigurationError:
+        return 'Google provider is misconfigured. '
+            'See docs/google_signin.md.$detail';
+      case GoogleSignInExceptionCode.userMismatch:
+        return 'Please sign in with the same Google account again.';
+      case GoogleSignInExceptionCode.interrupted:
+        return 'Google Sign-In was interrupted. Please try again.';
+      case GoogleSignInExceptionCode.uiUnavailable:
+        return 'Could not show the Google Sign-In window. Please try again.';
+      default:
+        return 'Google Sign-In failed: ${e.description ?? e.code.name}';
     }
   }
 

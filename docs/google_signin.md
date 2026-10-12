@@ -155,9 +155,15 @@ flutter run --dart-define-from-file=config/supabase.json
 
 ### Troubleshooting
 
+Run `bash tool/google_signin_check.sh` first — it prints this build's Android
+package name, debug SHA-1, the injected client IDs, whether Supabase has Google
+enabled, and the exact values to register in Google Cloud Console.
+
 | Symptom | Cause |
 |---|---|
-| `GoogleSignInExceptionCode.clientConfigurationError` | wrong package/bundle id, or SHA-1 not registered |
+| "an unexpected error occurred" right after picking an account | the old, generic catch-all; the reason is now surfaced (row below) |
+| app: *"Google Sign-In is misconfigured for this app: the Android package name + SHA-1 …"* / log: `GoogleSignInExceptionCode.clientConfigurationError` | wrong package/bundle id, or SHA-1 not registered — the classic fallout of renaming the app id (`com.example.*` → `com.salon.*`) |
 | unexpected `canceled` right after picking an account | usually the same config error (Credential Manager masks it) |
 | works in debug, fails in release | release keystore SHA-1 not registered |
 | `Google Sign-In is not configured on this build` | `GOOGLE_SERVER_CLIENT_ID` missing from the dart-define file |
+| `Missing security tokens from Google Authentication.` | the web client id was not honoured as `serverClientId` — check `config/supabase.json` |

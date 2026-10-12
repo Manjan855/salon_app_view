@@ -34,6 +34,19 @@ void main() {
     );
   });
 
+  test('auth_provider surfaces GoogleSignInException instead of swallowing it', () {
+    expect(
+      providerSrc,
+      contains('on GoogleSignInException'),
+      reason: 'native Google failures must not collapse into a generic message',
+    );
+    expect(
+      providerSrc,
+      contains('GoogleSignInExceptionCode.clientConfigurationError'),
+      reason: 'the package/SHA-1 misconfiguration must name its fix',
+    );
+  });
+
   test('the config example documents both Google keys', () {
     final cfg =
         jsonDecode(exampleCfg.readAsStringSync()) as Map<String, dynamic>;
