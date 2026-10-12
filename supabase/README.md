@@ -85,6 +85,21 @@ It reads `config/supabase.json` and prints a pass/fail for the
 `services.gender` migration and the `payments` Edge Function — handy because a
 SQL-editor "Success" message can appear even when a step did not stick.
 
+### Automated one-command path (no dashboard)
+
+`tool/apply_backend.sh` applies the pending migration **and** deploys the
+`payments` function through the Supabase **Management API**, then runs the live
+check above. It needs a Personal Access Token (not an app key):
+
+```bash
+# create one: https://supabase.com/dashboard/account/tokens
+export SUPABASE_ACCESS_TOKEN=sbp_xxx      # or store it in gitignored supabase/.env
+bash tool/apply_backend.sh                # add --dry-run to preview first
+```
+
+The token is never printed and never committed. Every step is idempotent, so the
+script is safe to re-run. Use the manual steps below if you prefer the dashboard.
+
 > **A SQL-editor "Success. No rows returned" is not proof the migration ran.**
 > The migration file ends with a query that **always returns exactly one row**
 > (`men / women / unisex / total_services`). If you don't see that row, the DDL

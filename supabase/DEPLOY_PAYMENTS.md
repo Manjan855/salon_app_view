@@ -10,6 +10,12 @@ Project: **`zhnfhkahspsqbfjetwlt`** (<https://supabase.com/dashboard/project/zhn
 > `https://zhnfhkahspsqbfjetwlt.supabase.co/functions/v1/payments` in a browser
 > returns JSON like `{"ok":true,"service":"payments",...}` instead of `404`.
 
+> **Prefer one command?** `bash tool/apply_backend.sh` does this whole page — and
+> the pending `services.gender` migration — via the Management API with a
+> Personal Access Token, no dashboard clicks. See the *Automated one-command
+> path* section in [`README.md`](README.md). The manual steps below are the
+> fallback.
+
 ---
 
 ## Why you don't need to create a secret key by hand
