@@ -171,6 +171,7 @@ enabled, and the exact values to register in Google Cloud Console.
 | app: *"Google Sign-In is misconfigured for this app: the Android package name + SHA-1 …"* / log: `GoogleSignInExceptionCode.clientConfigurationError` | wrong package/bundle id, or SHA-1 not registered — the classic fallout of renaming the app id (`com.example.*` → `com.salon.*`) |
 | app/log: `[28444] developer console is not set up correctly` | no Android OAuth client matches this package + SHA-1, **or** the Android client sits in a different Google Cloud project than the web client |
 | `[28444]` even though the Android client clearly exists | the Android client is in a *different project* than the web client, the registered SHA-1 is stale (debug keystore was regenerated), or Play services cached the failure — see the note below |
+| *"the fingerprint you specified is already used by an Android OAuth2 client ID in this project or another project"* when adding the Android client | the `(package, SHA-1)` pair is globally unique and already registered in **another** project — see the last note below (`regen_debug_keystore.sh` is the quick fix) |
 | unexpected `canceled` right after picking an account | usually the same config error (Credential Manager masks it) |
 | works in debug, fails in release | release keystore SHA-1 not registered |
 | `Google Sign-In is not configured on this build` | `GOOGLE_SERVER_CLIENT_ID` missing from the dart-define file |
@@ -197,3 +198,31 @@ enabled, and the exact values to register in Google Cloud Console.
 > Studio or a fresh machine), silently invalidating a value you registered
 > earlier. That alone produces this exact error. `tool/google_signin_check.sh`
 > always prints the current value to compare against the console.
+
+> **Seeing "the fingerprint you specified is already used by an Android OAuth2
+> client ID in this project or another project"?** A `(package name, SHA-1)`
+> pair can be registered **only once across all Firebase and Google Cloud
+> projects** (Google's own wording: *"every pairing of a package name and SHA-1
+> certificate fingerprint used to create an OAuth 2.0 client ID must be unique
+> across all Firebase and Google Cloud projects"*). So this message usually
+> means the pair your build signs with already lives in some **other** project —
+> which is exactly why the Android client you see in the web client's project
+> can have a *different* SHA-1 (or package) and still leave the app stuck on
+> `[28444]`.
+>
+> Two ways out:
+>
+> 1. **Find and delete the conflicting client** in whichever project holds it
+>    (Credentials → the Android row → delete; a deleted *project* also frees the
+>    pair, but only after its 7-day pending-deletion window). Then create the
+>    Android client in the web client's project.
+> 2. **Regenerate the debug keystore for a fresh SHA-1** and register *that* in
+>    the web client's project — the new fingerprint is unused, so the
+>    uniqueness rule can't block it:
+>    ```sh
+>    bash tool/regen_debug_keystore.sh          # shows the plan, changes nothing
+>    bash tool/regen_debug_keystore.sh --yes    # backs up + regenerates
+>    ```
+>    Then add the printed SHA-1 to a new Android client for
+>    `com.salon.salon_app_view` in project `940621050374`, `flutter clean`, and
+>    re-run.
