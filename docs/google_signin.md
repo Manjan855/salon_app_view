@@ -162,15 +162,75 @@ flutter run --dart-define-from-file=config/supabase.json
 ### Troubleshooting
 
 Run `bash tool/google_signin_check.sh` first — it prints this build's Android
-package name, debug SHA-1, the injected client IDs, whether Supabase has Google
-enabled, and the exact values to register in Google Cloud Console.
+package name, the debug keystore SHA-1, the injected client IDs, whether Supabase
+has Google enabled, and — most importantly — **the SHA-1 and client ID actually
+baked into `app-debug.apk`**, with a MATCH/DIFFERS verdict. That is the only
+check that reflects what the device really installs; reading the keystore file
+alone can disagree with the APK if the build is stale or signed by another key.
+
+#### Why `[28444]` keeps coming back
+
+`[28444] "developer console is not set up correctly"` is emitted by Google Play
+services / Credential Manager, not by this app. Google looks up an **Android**
+OAuth client whose `(package name, SHA-1)` matches the installed APK, inside the
+**same project as the `serverClientId` web client**, and rejects the request if
+it cannot find an exact match. "Exact match" is stricter than it looks:
+
+1. **Same project.** A client with the right package + SHA-1 in *another*
+   project never matches. The project number is the digits before the first `-`
+   of the web client ID (`940621050374-…` → project `940621050374`).
+2. **Globally unique pair.** Google allows a `(package, SHA-1)` pair in exactly
+   one Firebase/Google Cloud project, ever. If the pair your APK signs with is
+   already owned by another project, you cannot re-create it in the right one —
+   you must free it or mint a new SHA-1 (below).
+3. **The installed APK is the yardstick.** `flutter run`, a sideloaded
+   `app-debug.apk`, and a Play-signed build are three different signatures.
+   Register the one you actually test with.
+4. **Propagation takes time.** Google documents that OAuth client changes can
+   take **up to a few hours** to take effect. A "still failing right after I
+   fixed it" is often just this window, compounded by Play services caching the
+   failure per app.
+5. **Consent screen.** With the app in **Testing**, every test account must be
+   under **Google Auth Platform → Audience → Test users**. Publishing to
+   Production is *not* required for `email`/`profile`.
+
+If `tool/google_signin_check.sh` prints `MATCH` for both the signer and the
+client ID (as it does for this build), the app side is provably correct and the
+remaining cause is one of the five above — there is nothing left to change in
+the Dart or Gradle code.
+
+#### If it still fails with a verified APK
+
+Use one of these, in order:
+
+- **Free the pair.** In the project that owns it: Credentials → the Android row
+  → delete. A deleted *project* also frees it, but only after its 7-day
+  pending-deletion window.
+- **Mint a fresh, app-scoped SHA-1** (recommended — does not touch your other
+  apps' debug signature):
+  ```sh
+  bash tool/new_project_debug_keystore.sh          # dry run
+  bash tool/new_project_debug_keystore.sh --yes    # writes android/app/debug.keystore
+  ```
+  `android/app/build.gradle.kts` picks that key up automatically for debug and
+  the debug-signed release build. Register the printed SHA-1 as a **new**
+  Android client in project `940621050374`, then `flutter clean` and re-run.
+- **Regenerate the machine-wide key** (only if you accept that every Android
+  project on this machine changes signature):
+  ```sh
+  bash tool/regen_debug_keystore.sh --yes
+  ```
+
+After any console change: uninstall the app, clear **Google Play services**
+cache (Settings → Apps → Google Play services → Storage → Clear cache), and
+allow up to a few hours before concluding it did not work.
 
 | Symptom | Cause |
 |---|---|
 | "an unexpected error occurred" right after picking an account | the old, generic catch-all; the reason is now surfaced (row below) |
 | app: *"Google Sign-In is misconfigured for this app: the Android package name + SHA-1 …"* / log: `GoogleSignInExceptionCode.clientConfigurationError` | wrong package/bundle id, or SHA-1 not registered — the classic fallout of renaming the app id (`com.example.*` → `com.salon.*`) |
 | app/log: `[28444] developer console is not set up correctly` | no Android OAuth client matches this package + SHA-1, **or** the Android client sits in a different Google Cloud project than the web client |
-| `[28444]` even though the Android client clearly exists | the Android client is in a *different project* than the web client, the registered SHA-1 is stale (debug keystore was regenerated), or Play services cached the failure — see the note below |
+| `[28444]` even though the Android client clearly exists | the Android client is in a *different project* than the web client, the registered SHA-1 is stale (keystore changed), the `(package, SHA-1)` pair is owned by another project, Play services cached the failure, or the console change has not propagated yet (up to a few hours) — see "Why `[28444]` keeps coming back" above |
 | *"the fingerprint you specified is already used by an Android OAuth2 client ID in this project or another project"* when adding the Android client | the `(package, SHA-1)` pair is globally unique and already registered in **another** project — see the last note below (`regen_debug_keystore.sh` is the quick fix) |
 | unexpected `canceled` right after picking an account | usually the same config error (Credential Manager masks it) |
 | works in debug, fails in release | release keystore SHA-1 not registered |

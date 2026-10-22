@@ -25,11 +25,37 @@ android {
         versionName = flutter.versionName
     }
 
+    // Opt-in, app-scoped debug key. If `android/app/debug.keystore` exists it is
+    // used for debug (and for the debug-signed release build) instead of the
+    // machine-wide ~/.android/debug.keystore. This lets you register a fresh,
+    // never-used SHA-1 in Google Cloud without disturbing every other Android
+    // project on this machine. Create it with:
+    //   bash tool/new_project_debug_keystore.sh --yes
+    // The file is gitignored (*.keystore), so it never leaves this checkout.
+    signingConfigs {
+        val projectDebugKey = file("debug.keystore")
+        if (projectDebugKey.exists()) {
+            create("projectDebug") {
+                storeFile = projectDebugKey
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
+    }
+
     buildTypes {
+        // When a project-local key exists, use it for debug too so the
+        // installed APK, `flutter run`, and `flutter run --release` all share
+        // the same registered SHA-1.
+        getByName("debug") {
+            signingConfigs.findByName("projectDebug")?.let { signingConfig = it }
+        }
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("projectDebug")
+                ?: signingConfigs.getByName("debug")
         }
     }
 }

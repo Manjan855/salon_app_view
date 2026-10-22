@@ -32,7 +32,11 @@ echo "iOS bundle id   : ${ios_id:-<not found>}"
 # --- Debug keystore ----------------------------------------------------------
 section "Android debug keystore fingerprint"
 ks="$HOME/.android/debug.keystore"
+ks_sha1=""
 if [ -f "$ks" ]; then
+  ks_sha1="$(keytool -list -v -keystore "$ks" -alias androiddebugkey \
+    -storepass android -keypass android 2>/dev/null \
+    | tr -d '\r' | sed -n 's/^[[:space:]]*SHA1:[[:space:]]*//p' | head -1)"
   keytool -list -v -keystore "$ks" -alias androiddebugkey \
     -storepass android -keypass android 2>/dev/null \
     | grep -iE 'SHA1:|SHA256:' | sed 's/^[[:space:]]*/  /'
@@ -57,6 +61,75 @@ if [ -f "$cfg" ]; then
 else
   echo "  config/supabase.json not found"
   web=""; url=""; key=""; proj=""
+fi
+
+# --- Built APK: what the device actually installs ----------------------------
+section "Built APK (the signer + client id the device really uses)"
+norm_sha1() { printf '%s' "$1" | tr -d ':' | tr '[:lower:]' '[:upper:]'; }
+
+apk="build/app/outputs/flutter-apk/app-debug.apk"
+[ -f "$apk" ] || apk="build/app/outputs/apk/debug/app-debug.apk"
+if [ -f "$apk" ]; then
+  echo "APK            : $apk"
+
+  apksigner="$(command -v apksigner 2>/dev/null || true)"
+  if [ -z "$apksigner" ]; then
+    for sdk in "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}" \
+               "$HOME/AppData/Local/Android/Sdk" "$HOME/Library/Android/sdk" \
+               "$HOME/Android/Sdk"; do
+      [ -n "$sdk" ] || continue
+      cand="$(find "$sdk/build-tools" -maxdepth 2 -name 'apksigner*' 2>/dev/null | sort -V | tail -1)"
+      [ -n "$cand" ] && { apksigner="$cand"; break; }
+    done
+  fi
+
+  apk_sha1=""
+  if [ -n "$apksigner" ]; then
+    cert="$("$apksigner" verify --print-certs "$apk" 2>/dev/null)"
+    apk_sha1="$(printf '%s\n' "$cert" | tr -d '\r' \
+      | sed -n 's/^Signer #1 certificate SHA-1 digest: //p' | head -1)"
+    printf '%s\n' "$cert" | grep -iE 'SHA-1 digest|SHA-256 digest' | sed 's/^/  /'
+  else
+    echo "  (apksigner not found — install Android build-tools to read the APK signer)"
+  fi
+
+  # Dump the client ID baked in at compile time (String.fromEnvironment).
+  baked="$(python - "$apk" <<'PY' 2>/dev/null
+import re, sys, zipfile
+try:
+    with zipfile.ZipFile(sys.argv[1]) as z:
+        data = z.read("assets/flutter_assets/kernel_blob.bin")
+except Exception:
+    sys.exit(0)
+seen = []
+for m in re.findall(rb"[0-9]{6,}-[a-z0-9]+\.apps\.googleusercontent\.com", data):
+    s = m.decode()
+    if s not in seen:
+        seen.append(s)
+print(", ".join(seen))
+PY
+)"
+  echo "  baked client id : ${baked:-<not found>}"
+
+  if [ -n "${ks_sha1:-}" ] && [ -n "$apk_sha1" ]; then
+    if [ "$(norm_sha1 "$ks_sha1")" = "$(norm_sha1 "$apk_sha1")" ]; then
+      echo "  signer verdict : APK MATCHES the debug keystore above"
+    else
+      echo "  signer verdict : APK DIFFERS from the debug keystore above"
+      echo "                   (expected if you use android/app/debug.keystore)"
+    fi
+  fi
+
+  if [ -n "$baked" ] && [ -n "${web:-}" ]; then
+    if [ "$baked" = "$web" ]; then
+      echo "  client verdict : APK MATCHES config/supabase.json"
+    else
+      echo "  client verdict : APK DIFFERS from config/supabase.json — rebuild it"
+    fi
+  fi
+else
+  echo "  (no debug APK yet — run:)"
+  echo "    flutter build apk --debug --dart-define-from-file=config/supabase.json"
 fi
 
 # --- Supabase provider -------------------------------------------------------
