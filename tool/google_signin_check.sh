@@ -31,8 +31,16 @@ echo "iOS bundle id   : ${ios_id:-<not found>}"
 
 # --- Debug keystore ----------------------------------------------------------
 section "Android debug keystore fingerprint"
-ks="$HOME/.android/debug.keystore"
+# Prefer the app-scoped key when present (build.gradle.kts uses it automatically).
+if [ -f android/app/debug.keystore ]; then
+  ks="android/app/debug.keystore"
+  ks_label="project-scoped (android/app/debug.keystore)"
+else
+  ks="$HOME/.android/debug.keystore"
+  ks_label="machine-wide (~/.android/debug.keystore)"
+fi
 ks_sha1=""
+echo "  Keystore: $ks_label"
 if [ -f "$ks" ]; then
   ks_sha1="$(keytool -list -v -keystore "$ks" -alias androiddebugkey \
     -storepass android -keypass android 2>/dev/null \
@@ -116,7 +124,7 @@ PY
       echo "  signer verdict : APK MATCHES the debug keystore above"
     else
       echo "  signer verdict : APK DIFFERS from the debug keystore above"
-      echo "                   (expected if you use android/app/debug.keystore)"
+      echo "                   (rebuild after changing keys)"
     fi
   fi
 
