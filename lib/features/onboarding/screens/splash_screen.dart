@@ -33,7 +33,10 @@ class _SplashScreenState extends State<SplashScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     // 2. Removed 'await authProvider.loadUser();' since user state is handled synchronously
-    if (seenOnboarding) {
+    if (authProvider.isPasswordRecovery) {
+      // A password-reset link launched the app; finish that before anything else.
+      Navigator.pushReplacementNamed(context, RouteName.resetPassword);
+    } else if (seenOnboarding) {
       if (authProvider.isAuthenticated) {
         Navigator.pushReplacementNamed(context, RouteName.home);
       } else {

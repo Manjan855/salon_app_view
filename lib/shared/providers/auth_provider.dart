@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:salon_app_view/app_env.dart';
@@ -12,10 +14,42 @@ class AuthProvider with ChangeNotifier {
   String? _error;
   User? _user;
 
+  /// True after the user opens a password-reset link. The splash/root listener
+  /// uses it to route to the "set a new password" screen instead of home.
+  bool _isPasswordRecovery = false;
+  StreamSubscription<AuthState>? _authSubscription;
+
+  AuthProvider() {
+    // Supabase's deep-link observer exchanges the recovery `code` and emits
+    // `passwordRecovery` (see gotrue exchangeCodeForSession). Capture it here so
+    // the UI can react no matter which screen is on top.
+    _authSubscription = _supabase.auth.onAuthStateChange.listen((state) {
+      if (state.event == AuthChangeEvent.passwordRecovery) {
+        _isPasswordRecovery = true;
+        _error = null;
+        notifyListeners();
+      }
+    });
+  }
+
   bool get isAuthenticated => _authRepo.currentUser != null;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  bool get isPasswordRecovery => _isPasswordRecovery;
   User? get user => _user ?? _supabase.auth.currentUser;
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
+  /// Leaves recovery mode once the new password is saved (or the user backs out).
+  void clearPasswordRecovery() {
+    if (!_isPasswordRecovery) return;
+    _isPasswordRecovery = false;
+    notifyListeners();
+  }
 
   // Helper getter to cleanly access the user's name from Supabase metadata
   String get userName =>
@@ -130,6 +164,60 @@ class AuthProvider with ChangeNotifier {
       return false;
     } catch (e) {
       _error = "An unexpected error occurred during login.";
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Sends a Supabase password-reset email. The link returns to the app via
+  /// [AppEnv.authRedirectUrl]; opening it emits [AuthChangeEvent.passwordRecovery]
+  /// and routes the user to the "set new password" screen.
+  Future<bool> sendPasswordResetEmail(String email) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _supabase.auth.resetPasswordForEmail(
+        email.trim(),
+        redirectTo: AppEnv.authRedirectUrl,
+      );
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on AuthException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Could not send the reset email. Check your connection and try again.';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Saves a new password for the user currently in a recovery session.
+  Future<bool> updatePassword(String newPassword) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      await _supabase.auth.updateUser(UserAttributes(password: newPassword));
+      _isPasswordRecovery = false;
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on AuthException catch (e) {
+      _error = e.message;
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _error = 'Could not update your password. Please try again.';
       _isLoading = false;
       notifyListeners();
       return false;

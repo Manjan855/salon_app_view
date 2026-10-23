@@ -37,7 +37,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // 1. Execute account creation
       bool registered = await authProvider.signUp(
         email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+        // Do NOT trim the password: it is a secret and may legitimately contain
+        // leading/trailing spaces. It must also match exactly what login sends.
+        password: _passwordController.text,
         name: _nameController.text.trim(),
       );
 
@@ -45,13 +47,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (registered) {
         // FIXED: Added 'email:' and 'password:' labels to match named parameters
-        await authProvider.login(
+        final loggedIn = await authProvider.login(
           // _emailController.text.trim(), 
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
 
         if (!mounted) return;
+
+        if (!loggedIn) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authProvider.error ?? 'Login after sign-up failed.'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+          return;
+        }
 
         // 3. Navigate forward safely with an active local token
         Navigator.pushReplacementNamed(context, RouteName.persona);

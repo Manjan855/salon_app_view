@@ -9,6 +9,7 @@ import 'package:salon_app_view/features/onboarding/screens/splash_screen.dart';
 import 'package:salon_app_view/features/onboarding/screens/onboarding_screen.dart';
 import 'package:salon_app_view/features/auth/screens/login_screen.dart';
 import 'package:salon_app_view/features/auth/screens/register_screen.dart';
+import 'package:salon_app_view/features/auth/screens/reset_password_screen.dart';
 import 'package:salon_app_view/features/auth/screens/personal_info.dart';
 import 'package:salon_app_view/features/auth/screens/location_screen.dart';
 import 'package:salon_app_view/features/home/home_screen.dart';
@@ -34,6 +35,10 @@ import 'package:salon_app_view/shared/providers/review_provider.dart';
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
+/// Navigator above `MaterialApp`, so the password-recovery listener can push
+/// the reset screen even when the deep link arrives while another route is up.
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 class RunApp extends StatelessWidget {
   const RunApp({super.key});
 
@@ -54,7 +59,9 @@ class RunApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ReviewProvider()),
       ],
       // Handles `salonappview://payment-result?…` and kicks the app to refresh.
-      child: const _PaymentLinkHandler(child: _ThemedApp()),
+      child: const _PaymentLinkHandler(
+        child: _PasswordRecoveryHandler(child: _ThemedApp()),
+      ),
     );
   }
 }
@@ -69,6 +76,7 @@ class _ThemedApp extends StatelessWidget {
         return MaterialApp(
           title: 'Salon App',
           debugShowCheckedModeBanner: false,
+          navigatorKey: rootNavigatorKey,
           scaffoldMessengerKey: rootScaffoldMessengerKey,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
@@ -79,6 +87,7 @@ class _ThemedApp extends StatelessWidget {
             RouteName.onboard: (context) => const OnboardingScreen(),
             RouteName.login: (context) => const LoginScreen(),
             RouteName.signUp: (context) => const RegisterScreen(),
+            RouteName.resetPassword: (context) => const ResetPasswordScreen(),
             RouteName.persona: (context) => const PersonalInfo(),
             RouteName.location: (context) => const LocationScreen(),
             RouteName.home: (context) => const SalonHomeScreen(),
@@ -144,6 +153,48 @@ class _PaymentLinkHandlerState extends State<_PaymentLinkHandler> {
         backgroundColor: result.paid ? const Color(0xFF2E7D32) : null,
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+/// Routes to the "set a new password" screen as soon as Supabase reports a
+/// password-recovery session (the reset link was opened). Works on cold start
+/// and while the app is already running, and takes precedence over the splash
+/// screen's normal "signed in -> home" redirect.
+class _PasswordRecoveryHandler extends StatefulWidget {
+  const _PasswordRecoveryHandler({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_PasswordRecoveryHandler> createState() =>
+      _PasswordRecoveryHandlerState();
+}
+
+class _PasswordRecoveryHandlerState extends State<_PasswordRecoveryHandler> {
+  bool _navigated = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final recovering = context.watch<AuthProvider>().isPasswordRecovery;
+
+    if (!recovering) {
+      _navigated = false;
+      return;
+    }
+    if (_navigated) return;
+    _navigated = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      rootNavigatorKey.currentState?.pushNamedAndRemoveUntil(
+        RouteName.resetPassword,
+        (route) => false,
+      );
+    });
   }
 
   @override
