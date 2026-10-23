@@ -177,6 +177,13 @@ class _PasswordRecoveryHandlerState extends State<_PasswordRecoveryHandler> {
   bool _navigated = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Covers a reset link that launched a warm app after the event was missed.
+    context.read<AuthProvider>().restorePendingPasswordReset();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final recovering = context.watch<AuthProvider>().isPasswordRecovery;

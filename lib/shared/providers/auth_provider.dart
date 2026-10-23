@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:salon_app_view/app_env.dart';
 import 'package:salon_app_view/repositories/auth_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthProvider with ChangeNotifier {
@@ -19,6 +20,11 @@ class AuthProvider with ChangeNotifier {
   bool _isPasswordRecovery = false;
   StreamSubscription<AuthState>? _authSubscription;
 
+  /// Persisted when a reset email is sent. If the app is killed and relaunched
+  /// by the link, the `passwordRecovery` event can fire before this provider
+  /// subscribes, so this marker lets the splash screen recover the state.
+  static const String pendingResetKey = 'pendingPasswordReset';
+
   AuthProvider() {
     // Supabase's deep-link observer exchanges the recovery `code` and emits
     // `passwordRecovery` (see gotrue exchangeCodeForSession). Capture it here so
@@ -27,6 +33,12 @@ class AuthProvider with ChangeNotifier {
       if (state.event == AuthChangeEvent.passwordRecovery) {
         _isPasswordRecovery = true;
         _error = null;
+        notifyListeners();
+      } else if (state.event == AuthChangeEvent.signedIn &&
+          _isPasswordRecovery) {
+        // A normal sign-in supersedes a stale recovery request.
+        _isPasswordRecovery = false;
+        _clearPendingResetPref();
         notifyListeners();
       }
     });
@@ -48,7 +60,26 @@ class AuthProvider with ChangeNotifier {
   void clearPasswordRecovery() {
     if (!_isPasswordRecovery) return;
     _isPasswordRecovery = false;
+    _clearPendingResetPref();
     notifyListeners();
+  }
+
+  /// Cold-start fallback: if a reset was requested and a session now exists but
+  /// the `passwordRecovery` event was missed, restore recovery mode.
+  Future<void> restorePendingPasswordReset() async {
+    if (_isPasswordRecovery) return;
+    if (_supabase.auth.currentUser == null) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(pendingResetKey) != true) return;
+
+    _isPasswordRecovery = true;
+    notifyListeners();
+  }
+
+  Future<void> _clearPendingResetPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(pendingResetKey);
   }
 
   // Helper getter to cleanly access the user's name from Supabase metadata
@@ -183,6 +214,8 @@ class AuthProvider with ChangeNotifier {
         email.trim(),
         redirectTo: AppEnv.authRedirectUrl,
       );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(pendingResetKey, true);
       _isLoading = false;
       notifyListeners();
       return true;
@@ -208,6 +241,7 @@ class AuthProvider with ChangeNotifier {
     try {
       await _supabase.auth.updateUser(UserAttributes(password: newPassword));
       _isPasswordRecovery = false;
+      await _clearPendingResetPref();
       _isLoading = false;
       notifyListeners();
       return true;

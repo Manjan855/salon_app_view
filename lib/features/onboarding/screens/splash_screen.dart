@@ -33,6 +33,11 @@ class _SplashScreenState extends State<SplashScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     // 2. Removed 'await authProvider.loadUser();' since user state is handled synchronously
+    // Cold-start reset: the recovery event may have fired before the provider
+    // subscribed, so consult the persisted marker too.
+    await authProvider.restorePendingPasswordReset();
+    if (!mounted) return;
+
     if (authProvider.isPasswordRecovery) {
       // A password-reset link launched the app; finish that before anything else.
       Navigator.pushReplacementNamed(context, RouteName.resetPassword);

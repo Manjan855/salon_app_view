@@ -46,6 +46,15 @@ void main() {
         reason: 'a cold-start recovery must not be redirected to home');
   });
 
+  test('cold start recovers a missed recovery event', () {
+    expect(provider, contains('pendingPasswordReset'),
+        reason: 'the reset request must survive process death');
+    expect(provider, contains('restorePendingPasswordReset'),
+        reason: 'a missed event must be recoverable from the marker');
+    expect(splash, contains('restorePendingPasswordReset'),
+        reason: 'the splash screen is the cold-start entry point');
+  });
+
   test('new password is saved with updateUser', () {
     expect(provider, contains('updateUser(UserAttributes(password:'),
         reason: 'setting a new password is auth.updateUser');
